@@ -1,41 +1,55 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { selfAssessmentService } from "@/services";
-import { Alert, Spinner, ProgressBar, Badge } from "@/components/ui";
+import { Alert, Spinner } from "@/components/ui";
 import { SKILL_LABELS, RATING_LABELS } from "@/utils/helpers";
 import { Brain, ChevronRight } from "lucide-react";
 
-// 👉 REACT BITS: Replace skill cards with <MagicCard> hover glow from React Bits
-// 👉 REACT BITS: Add <AnimatedList> staggered entrance for skill rows
+import DotField from "@/component/DotField/DotField";
 
 const SKILLS = Object.keys(SKILL_LABELS);
 
 const RATING_COLORS = {
-  1: { ring: "ring-red-400", bg: "bg-red-500", label: "text-red-600" },
-  2: { ring: "ring-orange-400", bg: "bg-orange-500", label: "text-orange-600" },
-  3: { ring: "ring-amber-400", bg: "bg-amber-500", label: "text-amber-600" },
-  4: { ring: "ring-blue-400", bg: "bg-blue-500", label: "text-blue-600" },
-  5: { ring: "ring-emerald-400", bg: "bg-emerald-500", label: "text-emerald-600" },
+  1: { solid: "#ef4444", glow: "rgba(239, 68, 68, 0.4)", bg: "rgba(239, 68, 68, 0.1)" },
+  2: { solid: "#f97316", glow: "rgba(249, 115, 22, 0.4)", bg: "rgba(249, 115, 22, 0.1)" },
+  3: { solid: "#f59e0b", glow: "rgba(245, 158, 11, 0.4)", bg: "rgba(245, 158, 11, 0.1)" },
+  4: { solid: "#3b82f6", glow: "rgba(59, 130, 246, 0.4)", bg: "rgba(59, 130, 246, 0.1)" },
+  5: { solid: "#10b981", glow: "rgba(16, 185, 129, 0.4)", bg: "rgba(16, 185, 129, 0.1)" },
 };
 
 function RatingSelector({ value, onChange }) {
+  // We need state to track which button is currently being hovered
+  const [hovered, setHovered] = useState(null);
+
   return (
-    <div className="flex gap-2">
+    <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
       {[1, 2, 3, 4, 5].map((n) => {
         const selected = value === n;
+        const isHovered = hovered === n;
         const colors = RATING_COLORS[n];
+
+        // It should glow if it is clicked OR if your mouse is over it
+        const shouldGlow = selected || isHovered;
+
         return (
           <button
             key={n}
             type="button"
             onClick={() => onChange(n)}
-            className={`
-              h-10 w-10 rounded-xl text-sm font-bold transition-all duration-150
-              ${selected
-                ? `${colors.bg} text-white ring-2 ${colors.ring} ring-offset-1 scale-110 shadow-md`
-                : "bg-surface-100 text-slate-500 hover:bg-surface-200"
-              }
-            `}
+            onMouseEnter={() => setHovered(n)}
+            onMouseLeave={() => setHovered(null)}
+            style={{
+              height: '42px', width: '42px', borderRadius: '12px',
+              fontSize: '15px', fontWeight: 'normal',
+              transition: 'all 0.2s ease', cursor: 'pointer',
+              // Change background color slightly on hover if not selected
+              backgroundColor: selected ? colors.solid : (isHovered ? colors.bg : 'rgba(255,255,255,0.03)'),
+              color: selected ? '#ffffff' : (isHovered ? colors.solid : 'rgba(255,255,255,0.5)'),
+              // Apply border and glow based on the shouldGlow variable
+              border: shouldGlow ? `1px solid ${colors.solid}` : '1px solid rgba(255,255,255,0.1)',
+              boxShadow: shouldGlow ? `0 0 16px ${colors.glow}` : 'none',
+              transform: shouldGlow ? 'scale(1.1)' : 'scale(1)'
+            }}
             title={RATING_LABELS[n]}
           >
             {n}
@@ -72,91 +86,146 @@ export default function SelfAssessmentPage() {
     }
   };
 
+  const glassCardStyle = {
+    backgroundColor: 'rgba(18, 15, 23, 0.85)',
+    backdropFilter: 'blur(12px)',
+    border: '1px solid rgba(168, 85, 247, 0.25)',
+    borderRadius: '16px',
+    padding: '24px',
+    boxShadow: '0 0 0 1px rgba(168,85,247,0.05), 0 0 12px 2px rgba(132,0,255,0.1), 0 4px 20px rgba(0,0,0,0.3)'
+  };
+
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
-      {/* Header */}
-      <div className="page-header">
-        <div className="flex items-center gap-3 mb-2">
-          <div className="p-2 bg-brand-50 rounded-lg">
-            <Brain size={20} className="text-brand-600" />
+    <div style={{ position: 'relative', minHeight: '100vh', padding: '32px 20px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+
+      <div style={{ position: 'fixed', inset: 0, zIndex: -1, pointerEvents: 'none', backgroundColor: '#050505' }}>
+        <DotField
+          dotRadius={2}
+          dotSpacing={22}
+          gradientFrom="rgba(233, 213, 255, 0.25)"
+          gradientTo="rgba(192, 132, 252, 0.15)"
+          sparkle={false}
+          waveAmplitude={5}
+        />
+      </div>
+
+      <div style={{ width: '100%', maxWidth: '700px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
+
+        {/* Header */}
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', gap: '16px', marginBottom: '8px' }}>
+          <p><br /></p>
+          <h1 style={{ fontSize: '40px', color: '#ffffff', margin: 0, fontWeight: 'normal' }}>Self Assessment</h1>
+          <p style={{ fontSize: '15px', color: 'rgba(255,255,255,0.6)', margin: 0, fontWeight: 'normal', lineHeight: '1.5' }}>
+            Rate your current skill level honestly. This will be compared against your actual MCQ test result to measure your confidence accuracy.
+          </p>
+        </div>
+
+        {/* Progress & Legend Container */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '16px' }}>
+
+          {/* Progress Card */}
+          <div style={{ ...glassCardStyle, padding: '20px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+              <span style={{ fontSize: '14px', color: '#ffffff', fontWeight: 'normal' }}>Completion Progress</span>
+              <span style={{ fontSize: '14px', color: '#c084fc', fontWeight: 'normal' }}>{completed} / {SKILLS.length} rated</span>
+            </div>
+            {/* Custom Inline Progress Bar */}
+            <div style={{ width: '100%', height: '6px', backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: '4px', overflow: 'hidden' }}>
+              <div style={{
+                width: `${(completed / SKILLS.length) * 100}%`,
+                height: '100%',
+                backgroundColor: '#c084fc',
+                transition: 'width 0.4s ease',
+                boxShadow: '0 0 8px rgba(168,85,247,0.8)'
+              }} />
+            </div>
           </div>
-          <h1 className="page-title">Self Assessment</h1>
+
+          {/* Rating Scale Legend */}
+          <div style={{ ...glassCardStyle, padding: '20px' }}>
+            <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '16px', marginTop: 0, fontWeight: 'normal' }}>
+              Rating Scale
+            </p>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
+              {[1, 2, 3, 4, 5].map((n) => (
+                <span key={n} style={{
+                  fontSize: '12px', padding: '6px 12px', borderRadius: '20px',
+                  backgroundColor: RATING_COLORS[n].bg,
+                  color: RATING_COLORS[n].solid,
+                  border: `1px solid ${RATING_COLORS[n].glow}`,
+                  fontWeight: 'normal'
+                }}>
+                  {n} — {RATING_LABELS[n]}
+                </span>
+              ))}
+            </div>
+          </div>
         </div>
-        <p className="text-sm text-slate-500">
-          Rate your current skill level honestly. This will be compared against your actual MCQ test result.
-        </p>
-      </div>
 
-      {/* Progress */}
-      <div className="card p-4">
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-sm font-medium text-slate-700">Progress</span>
-          <span className="text-sm text-slate-500">{completed} / {SKILLS.length} rated</span>
-        </div>
-        <ProgressBar value={completed} max={SKILLS.length} color="brand" />
-      </div>
+        {error && <Alert type="error" message={error} />}
 
-      {/* Rating scale legend */}
-      <div className="card p-4">
-        <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-3">Rating Scale</p>
-        <div className="flex flex-wrap gap-2">
-          {[1, 2, 3, 4, 5].map((n) => (
-            <span key={n} className={`badge bg-surface-100 ${RATING_COLORS[n].label} font-medium`}>
-              {n} — {RATING_LABELS[n]}
-            </span>
-          ))}
-        </div>
-      </div>
+        {/* Skill Rating Form */}
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          {SKILLS.map((skill) => {
+            const rating = ratings[skill];
+            const colors = rating > 0 ? RATING_COLORS[rating] : null;
 
-      {error && <Alert type="error" message={error} />}
-
-      {/* Skill rating form */}
-      <form onSubmit={handleSubmit} className="space-y-3">
-        {SKILLS.map((skill) => {
-          const rating = ratings[skill];
-          const colors = rating > 0 ? RATING_COLORS[rating] : null;
-          return (
-            <div key={skill} className="card p-5 flex items-center justify-between gap-4 animate-fade-in">
-              <div className="min-w-0">
-                <div className="flex items-center gap-2">
-                  <h3 className="text-sm font-semibold text-slate-800">{SKILL_LABELS[skill]}</h3>
-                  {rating > 0 && (
-                    <Badge variant="default" className={`${colors.label} bg-transparent text-xs`}>
-                      {RATING_LABELS[rating]}
-                    </Badge>
+            return (
+              <div key={skill} style={{ ...glassCardStyle, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '20px' }}>
+                <div style={{ flex: 1, minWidth: '200px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '4px' }}>
+                    <h3 style={{ fontSize: '16px', color: '#ffffff', margin: 0, fontWeight: 'normal' }}>{SKILL_LABELS[skill]}</h3>
+                    {rating > 0 && (
+                      <span style={{
+                        fontSize: '11px', padding: '2px 8px', borderRadius: '12px',
+                        border: `1px solid ${colors.solid}`, color: colors.solid,
+                        fontWeight: 'normal'
+                      }}>
+                        {RATING_LABELS[rating]}
+                      </span>
+                    )}
+                  </div>
+                  {rating === 0 && (
+                    <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.4)', margin: 0, fontWeight: 'normal' }}>Select your level</p>
                   )}
                 </div>
-                {rating === 0 && (
-                  <p className="text-xs text-slate-400 mt-0.5">Select your level</p>
-                )}
-              </div>
-              <RatingSelector
-                value={rating}
-                onChange={(val) => setRatings((p) => ({ ...p, [skill]: val }))}
-              />
-            </div>
-          );
-        })}
 
-        {/* Submit */}
-        <div className="card p-5 mt-2">
-          <div className="flex items-center justify-between">
+                <RatingSelector
+                  value={rating}
+                  onChange={(val) => setRatings((p) => ({ ...p, [skill]: val }))}
+                />
+              </div>
+            );
+          })}
+
+          {/* Submit Action */}
+          <div style={{ ...glassCardStyle, display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '8px' }}>
             <div>
-              <p className="text-sm font-medium text-slate-700">Ready to submit?</p>
-              <p className="text-xs text-slate-500 mt-0.5">
+              <p style={{ fontSize: '15px', color: '#ffffff', margin: '0 0 4px 0', fontWeight: 'normal' }}>Ready to submit?</p>
+              <p style={{ fontSize: '13px', color: 'rgba(255,255,255,0.5)', margin: 0, fontWeight: 'normal' }}>
                 {allDone ? "All skills rated. You can submit now." : `Rate ${SKILLS.length - completed} more skill(s) to continue.`}
               </p>
             </div>
             <button
               type="submit"
               disabled={!allDone || submitting}
-              className="btn-primary gap-2"
+              style={{
+                display: 'flex', alignItems: 'center', gap: '8px',
+                padding: '12px 24px', borderRadius: '12px',
+                backgroundColor: allDone ? '#8400ff' : 'rgba(255,255,255,0.05)',
+                color: allDone ? '#ffffff' : 'rgba(255,255,255,0.3)',
+                border: allDone ? 'none' : '1px solid rgba(255,255,255,0.1)',
+                cursor: (allDone && !submitting) ? 'pointer' : 'not-allowed',
+                boxShadow: allDone ? '0 0 20px rgba(132,0,255,0.4)' : 'none',
+                fontWeight: 'normal', fontSize: '15px', transition: 'all 0.3s'
+              }}
             >
-              {submitting ? <Spinner size="sm" /> : <>Submit <ChevronRight size={16} /></>}
+              {submitting ? <Spinner size="sm" /> : <>Submit <ChevronRight size={18} /></>}
             </button>
           </div>
-        </div>
-      </form>
+        </form>
+
+      </div>
     </div>
   );
 }

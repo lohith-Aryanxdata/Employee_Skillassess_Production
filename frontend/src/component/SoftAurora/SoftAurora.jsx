@@ -166,9 +166,13 @@ export default function SoftAurora({
   useEffect(() => {
     if (!containerRef.current) return;
     const container = containerRef.current;
-    const renderer = new Renderer({ alpha: true, premultipliedAlpha: false });
+
+    // FORCED: alpha to false so the canvas is forced to be opaque, not transparent
+    const renderer = new Renderer({ alpha: false, premultipliedAlpha: false });
     const gl = renderer.gl;
-    gl.clearColor(0, 0, 0, 0);
+
+    // FORCED: clear color is pure opaque black
+    gl.clearColor(0, 0, 0, 1);
 
     let program;
     let currentMouse = [0.5, 0.5];
@@ -260,5 +264,12 @@ export default function SoftAurora({
     };
   }, [speed, scale, brightness, color1, color2, noiseFrequency, noiseAmplitude, bandHeight, bandSpread, octaveDecay, layerOffset, colorSpeed, enableMouseInteraction, mouseInfluence]);
 
-  return <div ref={containerRef} className="soft-aurora-container" />;
+  // FORCED: The wrapper div now has pure black background and 100% dimensions
+  return (
+    <div
+      ref={containerRef}
+      className="soft-aurora-container"
+      style={{ backgroundColor: '#000000', width: '100%', height: '100%' }}
+    />
+  );
 }

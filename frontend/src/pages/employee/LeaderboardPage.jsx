@@ -1,19 +1,103 @@
 import React from "react";
+import { Link } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { useApi } from "@/hooks/useApi";
 import { leaderboardService } from "@/services";
-import { Spinner, Alert, Avatar, Badge } from "@/components/ui";
+import { Spinner, Alert, Avatar } from "@/components/ui";
 import { formatPercent } from "@/utils/helpers";
-import { Trophy, Medal } from "lucide-react";
+import { Crown } from "lucide-react";
+import DotField from "@/component/DotField/DotField";
 
-// 👉 REACT BITS: Add <AnimatedList> staggered entrance for leaderboard rows
-// 👉 REACT BITS: Highlight the user's own row with <GlowCard>
-
-const RANK_STYLES = {
-  1: { bg: "bg-amber-50 border-amber-200", text: "text-amber-600", icon: "🥇" },
-  2: { bg: "bg-slate-50 border-slate-200", text: "text-slate-500", icon: "🥈" },
-  3: { bg: "bg-orange-50 border-orange-200", text: "text-orange-600", icon: "🥉" },
+const glassCardStyle = {
+  backgroundColor: 'rgba(15, 18, 23, 0.85)',
+  backdropFilter: 'blur(12px)',
+  border: '1px solid rgba(59, 130, 246, 0.25)',
+  borderRadius: '16px',
+  padding: '20px',
+  boxShadow: '0 0 0 1px rgba(59, 130, 246, 0.05), 0 0 12px 2px rgba(37, 99, 235, 0.1), 0 4px 20px rgba(0,0,0,0.3)'
 };
+
+const RANK_COLORS = {
+  1: { bg: "rgba(251,191,36,0.12)", border: "rgba(251,191,36,0.35)", text: "#FBBF24", glow: "rgba(251,191,36,0.07)" },
+  2: { bg: "rgba(148,163,184,0.1)", border: "rgba(148,163,184,0.2)", text: "#94A3B8", glow: "transparent" },
+  3: { bg: "rgba(180,130,70,0.1)", border: "rgba(180,130,70,0.2)", text: "#B47B3C", glow: "transparent" },
+};
+
+function PodiumAvatar({ name, rank }) {
+  const c = RANK_COLORS[rank] ?? { bg: "rgba(148,163,184,0.08)", border: "rgba(148,163,184,0.15)", text: "rgba(148,163,184,0.5)" };
+  const initials = (name || "").split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase();
+  const isFirst = rank === 1;
+  return (
+    <div style={{
+      width: isFirst ? "52px" : "44px",
+      height: isFirst ? "52px" : "44px",
+      borderRadius: "50%",
+      background: c.bg,
+      border: `${isFirst ? "2px" : "1px"} solid ${c.border}`,
+      display: "flex", alignItems: "center", justifyContent: "center",
+      fontSize: isFirst ? "16px" : "13px", fontWeight: 500, color: c.text,
+    }}>
+      {initials || "?"}
+    </div>
+  );
+}
+
+function PodiumCard({ entry, rank, isMe }) {
+  const c = RANK_COLORS[rank];
+  return (
+    <div style={{
+      ...glassCardStyle,
+      border: `1px solid ${c.border}`,
+      boxShadow: `0 0 24px ${c.glow}`,
+      padding: rank === 1 ? "28px 16px 20px" : "20px 16px",
+      display: "flex", flexDirection: "column", alignItems: "center",
+      position: "relative",
+      outline: isMe ? `2px solid ${c.text}` : "none",
+    }}>
+      {rank === 1 && (
+        <div style={{
+          position: "absolute", top: "-1px", left: "50%", transform: "translateX(-50%)",
+          background: "rgba(251,191,36,0.12)", border: "1px solid rgba(251,191,36,0.3)",
+          borderRadius: "0 0 8px 8px", padding: "3px 12px",
+        }}>
+          <span style={{ fontSize: "9px", fontWeight: 500, color: "#FBBF24", letterSpacing: "1.2px", textTransform: "uppercase" }}>
+            Top scorer
+          </span>
+        </div>
+      )}
+
+      {rank === 1 ? (
+        <div style={{
+          width: "32px", height: "32px", borderRadius: "50%",
+          background: c.bg, border: `1px solid ${c.border}`,
+          display: "flex", alignItems: "center", justifyContent: "center",
+          margin: "12px 0 10px",
+        }}>
+          <Crown size={14} color={c.text} />
+        </div>
+      ) : (
+        <div style={{
+          width: "28px", height: "28px", borderRadius: "50%",
+          background: c.bg, border: `1px solid ${c.border}`,
+          display: "flex", alignItems: "center", justifyContent: "center",
+          marginBottom: "10px",
+        }}>
+          <span style={{ fontSize: "11px", fontWeight: 500, color: c.text, fontFamily: "monospace" }}>#{rank}</span>
+        </div>
+      )}
+
+      <PodiumAvatar name={entry.name} rank={rank} />
+
+      <p style={{ fontSize: "12px", color: "#CBD5E1", margin: "10px 0 2px", textAlign: "center" }}>{entry.name}</p>
+      <p style={{ fontSize: rank === 1 ? "20px" : "16px", color: "#10B981", margin: 0, fontFamily: "monospace", fontWeight: 500 }}>
+        {formatPercent(entry.actualScore)}
+      </p>
+      {entry.department && (
+        <p style={{ fontSize: "10px", color: "rgba(148,163,184,0.45)", margin: "3px 0 0" }}>{entry.department}</p>
+      )}
+    </div>
+  );
+}
 
 export default function LeaderboardPage() {
   const { user } = useAuth();
@@ -21,37 +105,34 @@ export default function LeaderboardPage() {
   const leaderboard = data?.leaderboard ?? [];
 
   return (
-    <div className="space-y-6">
-      <div className="page-header flex items-center gap-3">
-        <div className="p-2 bg-amber-50 rounded-lg">
-          <Trophy size={20} className="text-amber-600" />
-        </div>
-        <div>
-          <h1 className="page-title">Leaderboard</h1>
-          <p className="page-subtitle">Ranked by MCQ test score</p>
-        </div>
+    <div style={{ position: 'relative', minHeight: '100vh', padding: '32px 20px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
+
+      {/* Background */}
+      <div style={{ position: 'fixed', inset: 0, zIndex: -1, pointerEvents: 'none', backgroundColor: '#050505' }}>
+        <DotField dotRadius={2} dotSpacing={22} gradientFrom="rgba(147, 197, 253, 0.25)" gradientTo="rgba(59, 130, 246, 0.15)" sparkle={false} waveAmplitude={5} />
       </div>
 
-      {loading && <div className="flex justify-center py-16"><Spinner size="lg" /></div>}
+      {/* Header — centered, no icon */}
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', marginBottom: '8px' }}>
+        <h1 style={{ fontSize: '32px', color: '#ffffff', margin: 0, fontWeight: 'normal' }}>Leaderboard</h1>
+        <p style={{ fontSize: '15px', color: 'rgba(255,255,255,0.6)', margin: '6px 0 0', fontWeight: 'normal' }}>Ranked by MCQ test score</p>
+      </div>
+
+      {loading && (
+        <div style={{ display: 'flex', justifyContent: 'center', padding: '64px' }}>
+          <Spinner size="lg" />
+        </div>
+      )}
       {error && <Alert type="error" message={error} />}
 
-      {/* Top 3 podium */}
+      {/* Podium */}
       {!loading && leaderboard.length >= 3 && (
-        <div className="grid grid-cols-3 gap-3">
-          {[leaderboard[1], leaderboard[0], leaderboard[2]].map((entry, podiumIdx) => {
-            if (!entry) return <div key={podiumIdx} />;
-            const heights = ["h-28", "h-36", "h-24"];
-            const rank = [2, 1, 3][podiumIdx];
-            const style = RANK_STYLES[rank];
-            const isMe = entry.userId === user?.id;
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px', alignItems: 'flex-end' }}>
+          {[leaderboard[1], leaderboard[0], leaderboard[2]].map((entry, idx) => {
+            if (!entry) return <div key={idx} />;
+            const rank = [2, 1, 3][idx];
             return (
-              <div key={entry.userId} className={`card p-4 flex flex-col items-center justify-end border ${style.bg} ${isMe ? "ring-2 ring-brand-400" : ""}`} style={{ minHeight: heights[podiumIdx] }}>
-                <span className="text-2xl mb-1">{style.icon}</span>
-                <Avatar name={entry.name} size="sm" />
-                <p className="text-xs font-semibold text-slate-800 mt-1.5 text-center truncate max-w-full">{entry.name}</p>
-                <p className={`text-sm font-bold mt-0.5 ${style.text}`}>{formatPercent(entry.actualScore)}</p>
-                {isMe && <Badge variant="primary" className="mt-1 text-[10px]">You</Badge>}
-              </div>
+              <PodiumCard key={entry.userId} entry={entry} rank={rank} isMe={entry.userId === user?.id} />
             );
           })}
         </div>
@@ -59,66 +140,84 @@ export default function LeaderboardPage() {
 
       {/* Full table */}
       {!loading && leaderboard.length > 0 && (
-        <div className="table-wrapper">
-          <table>
+        <div style={{ ...glassCardStyle, padding: 0, overflow: 'hidden' }}>
+          <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', tableLayout: 'fixed' }}>
             <thead>
-              <tr>
-                <th>Rank</th>
-                <th>Employee</th>
-                <th>Department</th>
-                <th>Actual Score</th>
-                <th>Accuracy Index</th>
+              <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+                {[["Rank", "60px"], ["Employee", null], ["Department", null], ["Score", "100px"], ["Accuracy", "100px"]].map(([h, w]) => (
+                  <th key={h} style={{
+                    width: w ?? undefined,
+                    padding: '14px 20px',
+                    color: 'rgba(148,163,184,0.45)',
+                    fontSize: '10px', textTransform: 'uppercase',
+                    letterSpacing: '1.2px', fontWeight: 500,
+                  }}>
+                    {h}
+                  </th>
+                ))}
               </tr>
             </thead>
             <tbody>
               {leaderboard.map((entry) => {
                 const isMe = entry.userId === user?.id;
-                const rankStyle = RANK_STYLES[entry.rank];
+                const c = RANK_COLORS[entry.rank];
+                const rowBg = isMe
+                  ? "rgba(59,130,246,0.06)"
+                  : entry.rank === 1 ? "rgba(251,191,36,0.03)"
+                    : entry.rank === 2 ? "rgba(148,163,184,0.03)"
+                      : entry.rank === 3 ? "rgba(180,130,70,0.03)"
+                        : "transparent";
+
                 return (
-                  <tr key={entry.userId} className={isMe ? "bg-brand-50" : ""}>
-                    <td>
-                      <div className="flex items-center gap-2">
-                        {rankStyle ? (
-                          <span className="text-lg">{rankStyle.icon}</span>
-                        ) : (
-                          <span className="text-sm font-semibold text-slate-500 w-6 text-center">#{entry.rank}</span>
+                  <tr
+                    key={entry.userId}
+                    style={{ borderBottom: '1px solid rgba(255,255,255,0.04)', background: rowBg, transition: "background 0.15s" }}
+                    onMouseEnter={(e) => e.currentTarget.style.background = "rgba(59,130,246,0.07)"}
+                    onMouseLeave={(e) => e.currentTarget.style.background = rowBg}
+                  >
+                    <td style={{ padding: '14px 20px', fontSize: '14px' }}>
+                      {entry.rank === 1 ? "🥇"
+                        : entry.rank === 2 ? "🥈"
+                          : entry.rank === 3 ? "🥉"
+                            : <span style={{ color: "rgba(148,163,184,0.5)", fontFamily: "monospace", fontSize: "12px" }}>#{entry.rank}</span>
+                      }
+                    </td>
+                    <td style={{ padding: '14px 16px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <div style={{
+                          width: "32px", height: "32px", borderRadius: "50%",
+                          background: c ? c.bg : "rgba(148,163,184,0.08)",
+                          border: `1px solid ${c ? c.border : "rgba(148,163,184,0.15)"}`,
+                          display: "flex", alignItems: "center", justifyContent: "center",
+                          fontSize: "11px", fontWeight: 500,
+                          color: c ? c.text : "rgba(148,163,184,0.5)",
+                          flexShrink: 0,
+                        }}>
+                          {(entry.name || "").split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase()}
+                        </div>
+                        <span style={{ fontSize: '13px', color: '#F1F5F9' }}>{entry.name}</span>
+                        {isMe && (
+                          <span style={{
+                            fontSize: "10px", background: "rgba(59,130,246,0.15)", color: "#60A5FA",
+                            padding: "2px 7px", borderRadius: "4px", border: "1px solid rgba(59,130,246,0.3)",
+                          }}>You</span>
                         )}
                       </div>
                     </td>
-                    <td>
-                      <div className="flex items-center gap-2.5">
-                        <Avatar name={entry.name} size="sm" />
-                        <div>
-                          <p className="font-medium text-slate-800 text-sm">{entry.name}</p>
-                          {isMe && <span className="text-[10px] text-brand-600 font-semibold">You</span>}
-                        </div>
-                      </div>
+                    <td style={{ padding: '14px 16px', fontSize: '12px', color: 'rgba(148,163,184,0.5)' }}>
+                      {entry.department || "—"}
                     </td>
-                    <td>
-                      <span className="text-slate-500 text-xs">{entry.department || "—"}</span>
+                    <td style={{ padding: '14px 16px', fontSize: '14px', color: '#10b981', fontFamily: 'monospace', textAlign: 'right' }}>
+                      {formatPercent(entry.actualScore)}
                     </td>
-                    <td>
-                      <span className="font-semibold text-slate-800">{formatPercent(entry.actualScore)}</span>
-                    </td>
-                    <td>
-                      {entry.cai != null ? (
-                        <Badge variant={entry.cai >= 80 ? "success" : entry.cai >= 60 ? "warning" : "danger"}>
-                          {formatPercent(entry.cai, 0)}
-                        </Badge>
-                      ) : "—"}
+                    <td style={{ padding: '14px 20px 14px 16px', fontSize: '13px', color: 'rgba(203,213,225,0.75)', fontFamily: 'monospace', textAlign: 'right' }}>
+                      {formatPercent(entry.cai, 0)}
                     </td>
                   </tr>
                 );
               })}
             </tbody>
           </table>
-        </div>
-      )}
-
-      {!loading && leaderboard.length === 0 && (
-        <div className="card p-12 text-center">
-          <Medal size={32} className="text-slate-300 mx-auto mb-3" />
-          <p className="text-slate-500 text-sm">No results yet. Be the first to complete the test!</p>
         </div>
       )}
     </div>

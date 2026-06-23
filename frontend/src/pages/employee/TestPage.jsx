@@ -1,11 +1,10 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { testService } from "@/services";
-import { Alert, Spinner, ProgressBar, Badge } from "@/components/ui";
+import { Spinner } from "@/components/ui";
 import { Clock, ChevronLeft, ChevronRight, Send, AlertTriangle } from "lucide-react";
 
-// 👉 REACT BITS: Add <CountUp> timer display from React Bits
-// 👉 REACT BITS: Add <ShinyText> for question text highlight
+import DotField from "@/component/DotField/DotField";
 
 function formatTime(seconds) {
   const m = Math.floor(seconds / 60).toString().padStart(2, "0");
@@ -15,22 +14,50 @@ function formatTime(seconds) {
 
 function TimerBar({ remaining, total }) {
   const pct = (remaining / total) * 100;
-  const color = pct > 33 ? "success" : pct > 15 ? "warning" : "danger";
-  const textColor = pct > 33 ? "text-emerald-600" : pct > 15 ? "text-amber-600" : "text-red-600";
+  const color = pct > 33 ? "#10b981" : pct > 15 ? "#fbbf24" : "#ef4444";
+
   return (
-    <div className="flex items-center gap-3">
-      <Clock size={16} className={textColor} />
-      <span className={`font-mono text-sm font-semibold ${textColor}`}>{formatTime(remaining)}</span>
-      <div className="flex-1">
-        <ProgressBar value={remaining} max={total} color={color} />
+    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+      <Clock size={16} color={color} />
+      <span style={{ fontFamily: 'monospace', fontSize: '14px', color: color, fontWeight: 'normal' }}>
+        {formatTime(remaining)}
+      </span>
+      <div style={{ width: '100px', height: '6px', backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: '4px', overflow: 'hidden' }}>
+        <div style={{ width: `${pct}%`, height: '100%', backgroundColor: color, transition: 'width 1s linear' }} />
       </div>
     </div>
   );
 }
 
+const glassCardStyle = {
+  backgroundColor: 'rgba(18, 15, 23, 0.85)',
+  backdropFilter: 'blur(12px)',
+  border: '1px solid rgba(168, 85, 247, 0.25)',
+  borderRadius: '16px',
+  padding: '24px',
+  boxShadow: '0 0 0 1px rgba(168,85,247,0.05), 0 0 12px 2px rgba(132,0,255,0.1), 0 4px 20px rgba(0,0,0,0.3)'
+};
+
+const buttonStyle = {
+  display: 'flex', alignItems: 'center', gap: '8px', justifyContent: 'center',
+  padding: '12px 24px', borderRadius: '12px',
+  backgroundColor: '#8400ff', color: '#ffffff',
+  border: 'none', cursor: 'pointer',
+  boxShadow: '0 0 20px rgba(132,0,255,0.4)',
+  fontWeight: 'normal', fontSize: '15px', transition: 'all 0.3s'
+};
+
+const secondaryButtonStyle = {
+  ...buttonStyle,
+  backgroundColor: 'rgba(255,255,255,0.05)',
+  color: '#ffffff',
+  border: '1px solid rgba(255,255,255,0.1)',
+  boxShadow: 'none'
+};
+
 export default function TestPage() {
   const navigate = useNavigate();
-  const [phase, setPhase] = useState("loading"); // loading | ready | active | submitting | done | error | already_done
+  const [phase, setPhase] = useState("loading");
   const [attempt, setAttempt] = useState(null);
   const [questions, setQuestions] = useState([]);
   const [answers, setAnswers] = useState({});
@@ -41,7 +68,9 @@ export default function TestPage() {
   const timerRef = useRef(null);
   const autoSubmittedRef = useRef(false);
 
-  // Load / resume test
+  const [hoveredOption, setHoveredOption] = useState(null);
+  const [hoveredDot, setHoveredDot] = useState(null);
+
   useEffect(() => {
     (async () => {
       try {
@@ -78,7 +107,6 @@ export default function TestPage() {
     }
   }, [answers, attempt, questions, navigate]);
 
-  // Timer countdown
   useEffect(() => {
     if (phase !== "active") return;
     timerRef.current = setInterval(() => {
@@ -97,59 +125,76 @@ export default function TestPage() {
   const answered = Object.keys(answers).length;
   const q = questions[current];
 
-  if (phase === "loading") return (
-    <div className="flex items-center justify-center py-24"><Spinner size="lg" /></div>
-  );
-
-  if (phase === "already_done") return (
-    <div className="max-w-lg mx-auto mt-16">
-      <div className="card p-8 text-center">
-        <div className="p-3 bg-emerald-50 rounded-full inline-flex mb-4">
-          <Send size={24} className="text-emerald-600" />
-        </div>
-        <h2 className="text-lg font-semibold text-slate-900 mb-2">Test Already Submitted</h2>
-        <p className="text-sm text-slate-500 mb-5">You have already completed the MCQ test. Check your results page.</p>
-        <button onClick={() => navigate("/results")} className="btn-primary">View Results</button>
+  // Base layout wrapper
+  const BaseLayout = ({ children }) => (
+    <div style={{ position: 'relative', minHeight: '100vh', padding: '32px 20px', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+      <div style={{ position: 'fixed', inset: 0, zIndex: -1, pointerEvents: 'none', backgroundColor: '#050505' }}>
+        <DotField dotRadius={2} dotSpacing={22} gradientFrom="rgba(233, 213, 255, 0.25)" gradientTo="rgba(192, 132, 252, 0.15)" sparkle={false} waveAmplitude={5} />
+      </div>
+      <div style={{ width: '100%', maxWidth: '800px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
+        {children}
       </div>
     </div>
   );
 
+  if (phase === "loading") return (
+    <BaseLayout><div style={{ display: 'flex', justifyContent: 'center', padding: '100px' }}><Spinner size="lg" /></div></BaseLayout>
+  );
+
+  if (phase === "already_done") return (
+    <BaseLayout>
+      <div style={{ ...glassCardStyle, textAlign: 'center', padding: '60px 20px' }}>
+        <div style={{ padding: '16px', backgroundColor: 'rgba(16, 185, 129, 0.15)', borderRadius: '50%', display: 'inline-flex', marginBottom: '20px', color: '#10b981' }}>
+          <Send size={32} />
+        </div>
+        <h2 style={{ fontSize: '24px', color: '#ffffff', marginBottom: '8px', fontWeight: 'normal' }}>Test Already Submitted</h2>
+        <p style={{ color: 'rgba(255,255,255,0.6)', marginBottom: '32px', fontWeight: 'normal' }}>You have already completed the MCQ test. Check your results page.</p>
+        <button onClick={() => navigate("/results")} style={{ ...buttonStyle, margin: '0 auto' }}>View Results</button>
+      </div>
+    </BaseLayout>
+  );
+
   if (phase === "error") return (
-    <div className="max-w-lg mx-auto mt-16">
-      <Alert type="error" message={error || "Something went wrong."} />
-      <button onClick={() => navigate("/dashboard")} className="btn-secondary mt-4">Back to Dashboard</button>
-    </div>
+    <BaseLayout>
+      <div style={{ ...glassCardStyle, textAlign: 'center', borderColor: 'rgba(248,113,113,0.3)' }}>
+        <p style={{ color: '#f87171', fontWeight: 'normal', marginBottom: '20px' }}>{error || "Something went wrong."}</p>
+        <button onClick={() => navigate("/dashboard")} style={secondaryButtonStyle}>Back to Dashboard</button>
+      </div>
+    </BaseLayout>
   );
 
   if (phase === "submitting") return (
-    <div className="flex flex-col items-center justify-center py-24 gap-4">
-      <Spinner size="xl" />
-      <p className="text-slate-600 font-medium">Submitting your test…</p>
-    </div>
+    <BaseLayout>
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '100px', gap: '20px' }}>
+        <Spinner size="xl" />
+        <p style={{ color: '#ffffff', fontWeight: 'normal', fontSize: '16px' }}>Submitting your test…</p>
+      </div>
+    </BaseLayout>
   );
 
-  // Ready screen
   if (phase === "ready") return (
-    <div className="max-w-xl mx-auto mt-12 space-y-5">
-      <div className="card p-8 text-center">
-        <div className="p-3 bg-brand-50 rounded-full inline-flex mb-4">
-          <Clock size={24} className="text-brand-600" />
+    <BaseLayout>
+      <div style={{ ...glassCardStyle, textAlign: 'center', padding: '40px 32px' }}>
+        <div style={{ padding: '16px', backgroundColor: 'rgba(132, 0, 255, 0.15)', borderRadius: '50%', display: 'inline-flex', marginBottom: '24px', color: '#c084fc', boxShadow: '0 0 16px rgba(168,85,247,0.2)' }}>
+          <Clock size={32} />
         </div>
-        <h1 className="text-xl font-bold text-slate-900 mb-2">MCQ Assessment Test</h1>
-        <p className="text-sm text-slate-500 mb-6">Read the instructions carefully before starting.</p>
-        <div className="grid grid-cols-3 gap-3 mb-6">
+        <h1 style={{ fontSize: '28px', color: '#ffffff', marginBottom: '8px', fontWeight: 'normal' }}>MCQ Assessment Test</h1>
+        <p style={{ color: 'rgba(255,255,255,0.5)', marginBottom: '32px', fontWeight: 'normal', fontSize: '15px' }}>Read the instructions carefully before starting.</p>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '32px' }}>
           {[
             { label: "Questions", value: questions.length },
             { label: "Duration", value: "30 min" },
             { label: "Attempts", value: "1 only" },
           ].map((s) => (
-            <div key={s.label} className="bg-surface-50 rounded-lg p-3">
-              <p className="text-xl font-bold text-brand-600">{s.value}</p>
-              <p className="text-xs text-slate-500 mt-0.5">{s.label}</p>
+            <div key={s.label} style={{ backgroundColor: 'rgba(255,255,255,0.03)', borderRadius: '12px', padding: '16px', border: '1px solid rgba(255,255,255,0.05)' }}>
+              <p style={{ fontSize: '24px', color: '#c084fc', margin: '0 0 4px 0', fontWeight: 'normal' }}>{s.value}</p>
+              <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.5)', margin: 0, fontWeight: 'normal' }}>{s.label}</p>
             </div>
           ))}
         </div>
-        <ul className="text-left text-sm text-slate-600 space-y-2 mb-6">
+
+        <ul style={{ textAlign: 'left', color: 'rgba(255,255,255,0.7)', fontSize: '14px', lineHeight: '2', marginBottom: '32px', padding: 0, listStyle: 'none' }}>
           {[
             "Timer starts when you click 'Start Test'",
             "Test auto-submits when time runs out",
@@ -157,126 +202,173 @@ export default function TestPage() {
             "Unanswered questions count as wrong",
             "One attempt only — cannot be retaken",
           ].map((item) => (
-            <li key={item} className="flex items-start gap-2">
-              <span className="text-brand-500 mt-0.5">•</span> {item}
+            <li key={item} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 'normal' }}>
+              <span style={{ color: '#c084fc' }}>•</span> {item}
             </li>
           ))}
         </ul>
-        <button onClick={() => setPhase("active")} className="btn-primary w-full py-3 text-base">
+
+        <button onClick={() => setPhase("active")} style={{ ...buttonStyle, width: '100%' }}>
           Start Test
         </button>
       </div>
-    </div>
+    </BaseLayout>
   );
 
-  // Active test
+  // Active test rendering
   const OPTION_KEYS = ["A", "B", "C", "D"];
   const optionValues = { A: q.optionA, B: q.optionB, C: q.optionC, D: q.optionD };
 
   return (
-    <div className="max-w-3xl mx-auto space-y-4">
-      {/* Top bar */}
-      <div className="card p-4 space-y-3">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-semibold text-slate-500">Question</span>
-            <Badge variant="primary">{current + 1} / {questions.length}</Badge>
-            <Badge variant={answered === questions.length ? "success" : "warning"}>
+    <BaseLayout>
+      {/* Top Bar Navigation */}
+      <div style={{ ...glassCardStyle, padding: '16px 24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <span style={{ fontSize: '13px', color: 'rgba(255,255,255,0.5)', fontWeight: 'normal' }}>Question</span>
+            <span style={{ padding: '4px 10px', backgroundColor: 'rgba(132, 0, 255, 0.15)', color: '#c084fc', border: '1px solid rgba(168, 85, 247, 0.3)', borderRadius: '20px', fontSize: '12px', fontWeight: 'normal' }}>
+              {current + 1} / {questions.length}
+            </span>
+            <span style={{ padding: '4px 10px', backgroundColor: answered === questions.length ? 'rgba(16, 185, 129, 0.15)' : 'rgba(251, 191, 36, 0.15)', color: answered === questions.length ? '#10b981' : '#fbbf24', border: answered === questions.length ? '1px solid rgba(16, 185, 129, 0.3)' : '1px solid rgba(251, 191, 36, 0.3)', borderRadius: '20px', fontSize: '12px', fontWeight: 'normal' }}>
               {answered} answered
-            </Badge>
+            </span>
           </div>
           <TimerBar remaining={remaining} total={totalTime} />
         </div>
-        <ProgressBar value={current + 1} max={questions.length} color="brand" />
+        {/* Overall Test Progress Bar */}
+        <div style={{ width: '100%', height: '4px', backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: '2px', overflow: 'hidden' }}>
+          <div style={{ width: `${((current + 1) / questions.length) * 100}%`, height: '100%', backgroundColor: '#c084fc', transition: 'width 0.3s ease' }} />
+        </div>
       </div>
 
-      {/* Low time warning */}
+      {/* Low Time Warning */}
       {remaining < 120 && (
-        <Alert type="warning" message={`Only ${formatTime(remaining)} remaining! Your test will auto-submit when time runs out.`} />
+        <div style={{ padding: '12px 16px', backgroundColor: 'rgba(239, 68, 68, 0.15)', border: '1px solid rgba(239, 68, 68, 0.4)', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '12px', color: '#f87171' }}>
+          <AlertTriangle size={18} />
+          <span style={{ fontSize: '14px', fontWeight: 'normal' }}>Only {formatTime(remaining)} remaining! Your test will auto-submit when time runs out.</span>
+        </div>
       )}
 
-      {/* Question card */}
-      <div className="card p-6 animate-fade-in">
-        <div className="flex items-start gap-3 mb-6">
-          <span className="flex-shrink-0 h-7 w-7 rounded-full gradient-brand text-white text-xs font-bold flex items-center justify-center">
+      {/* Question Card */}
+      <div style={{ ...glassCardStyle, padding: '32px' }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '16px', marginBottom: '32px' }}>
+          <span style={{ flexShrink: 0, height: '32px', width: '32px', borderRadius: '50%', backgroundColor: 'rgba(132, 0, 255, 0.2)', border: '1px solid rgba(168, 85, 247, 0.4)', color: '#c084fc', fontSize: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'normal', boxShadow: '0 0 12px rgba(168,85,247,0.2)' }}>
             {current + 1}
           </span>
-          <h2 className="text-base font-semibold text-slate-900 leading-relaxed">{q.questionText}</h2>
+          <h2 style={{ fontSize: '18px', color: '#ffffff', margin: 0, lineHeight: '1.6', fontWeight: 'normal' }}>{q.questionText}</h2>
         </div>
 
-        <div className="space-y-3">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
           {OPTION_KEYS.map((key) => {
             const selected = answers[q.id] === key;
+            const isHovered = hoveredOption === key;
+
             return (
               <button
                 key={key}
                 type="button"
                 onClick={() => setAnswers((p) => ({ ...p, [q.id]: key }))}
-                className={`w-full text-left flex items-start gap-3 px-4 py-3.5 rounded-xl border-2 transition-all duration-150 text-sm ${
-                  selected
-                    ? "border-brand-500 bg-brand-50 text-brand-900 font-medium"
-                    : "border-surface-200 bg-white hover:border-brand-300 hover:bg-surface-50 text-slate-700"
-                }`}
+                onMouseEnter={() => setHoveredOption(key)}
+                onMouseLeave={() => setHoveredOption(null)}
+                style={{
+                  width: '100%', textAlign: 'left', display: 'flex', alignItems: 'flex-start', gap: '16px',
+                  padding: '16px', borderRadius: '12px', transition: 'all 0.2s', cursor: 'pointer',
+                  backgroundColor: selected ? 'rgba(132, 0, 255, 0.15)' : (isHovered ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.03)'),
+                  border: selected ? '1px solid #c084fc' : (isHovered ? '1px solid rgba(255,255,255,0.2)' : '1px solid rgba(255,255,255,0.05)'),
+                  color: selected ? '#ffffff' : 'rgba(255,255,255,0.8)',
+                  boxShadow: selected ? '0 0 16px rgba(168,85,247,0.2)' : 'none',
+                  fontWeight: 'normal', fontSize: '15px'
+                }}
               >
-                <span className={`flex-shrink-0 h-6 w-6 rounded-full border-2 flex items-center justify-center text-xs font-bold mt-0.5 ${
-                  selected ? "border-brand-500 bg-brand-500 text-white" : "border-surface-300 text-slate-400"
-                }`}>
+                <span style={{
+                  flexShrink: 0, height: '24px', width: '24px', borderRadius: '50%',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', marginTop: '2px',
+                  backgroundColor: selected ? '#c084fc' : 'transparent',
+                  color: selected ? '#ffffff' : 'rgba(255,255,255,0.4)',
+                  border: selected ? 'none' : '1px solid rgba(255,255,255,0.2)',
+                  fontWeight: 'normal'
+                }}>
                   {key}
                 </span>
-                <span className="leading-relaxed">{optionValues[key]}</span>
+                <span style={{ lineHeight: '1.6', fontWeight: 'normal' }}>{optionValues[key]}</span>
               </button>
             );
           })}
         </div>
       </div>
 
-      {/* Navigation + submit */}
-      <div className="card p-4 flex items-center justify-between">
+      {/* Bottom Navigation & Minimap */}
+      <div style={{ ...glassCardStyle, padding: '20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '20px' }}>
+
         <button
           onClick={() => setCurrent((p) => Math.max(0, p - 1))}
           disabled={current === 0}
-          className="btn-secondary"
+          style={{ ...secondaryButtonStyle, opacity: current === 0 ? 0.3 : 1, cursor: current === 0 ? 'not-allowed' : 'pointer' }}
         >
           <ChevronLeft size={16} /> Previous
         </button>
 
-        {/* Question dots (mini map) */}
-        <div className="hidden sm:flex flex-wrap gap-1.5 max-w-xs justify-center">
-          {questions.map((_, idx) => (
-            <button
-              key={idx}
-              onClick={() => setCurrent(idx)}
-              className={`h-6 w-6 rounded-md text-xs font-medium transition-colors ${
-                idx === current
-                  ? "gradient-brand text-white"
-                  : answers[questions[idx].id]
-                  ? "bg-emerald-100 text-emerald-700"
-                  : "bg-surface-100 text-slate-400 hover:bg-surface-200"
-              }`}
-            >
-              {idx + 1}
-            </button>
-          ))}
+        {/* Minimap */}
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', maxWidth: '300px', justifyContent: 'center' }}>
+          {questions.map((_, idx) => {
+            const isCurrent = idx === current;
+            const isAnswered = answers[questions[idx].id];
+            const isDotHovered = hoveredDot === idx;
+
+            let bg = 'rgba(255,255,255,0.05)';
+            let color = 'rgba(255,255,255,0.4)';
+            let border = '1px solid rgba(255,255,255,0.1)';
+
+            if (isCurrent) {
+              bg = '#c084fc';
+              color = '#ffffff';
+              border = '1px solid #d8b4fe';
+            } else if (isAnswered) {
+              bg = 'rgba(16, 185, 129, 0.2)';
+              color = '#10b981';
+              border = '1px solid rgba(16, 185, 129, 0.4)';
+            } else if (isDotHovered) {
+              bg = 'rgba(255,255,255,0.1)';
+            }
+
+            return (
+              <button
+                key={idx}
+                onClick={() => setCurrent(idx)}
+                onMouseEnter={() => setHoveredDot(idx)}
+                onMouseLeave={() => setHoveredDot(null)}
+                style={{
+                  height: '28px', width: '28px', borderRadius: '6px',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: '12px', fontWeight: 'normal', cursor: 'pointer', transition: 'all 0.2s',
+                  backgroundColor: bg, color: color, border: border,
+                  boxShadow: isCurrent ? '0 0 10px rgba(168,85,247,0.4)' : 'none'
+                }}
+              >
+                {idx + 1}
+              </button>
+            );
+          })}
         </div>
 
         {current < questions.length - 1 ? (
-          <button onClick={() => setCurrent((p) => p + 1)} className="btn-primary">
+          <button onClick={() => setCurrent((p) => p + 1)} style={buttonStyle}>
             Next <ChevronRight size={16} />
           </button>
         ) : (
-          <button onClick={() => submitTest(false)} className="btn-primary bg-emerald-600 hover:bg-emerald-700">
+          <button onClick={() => submitTest(false)} style={{ ...buttonStyle, backgroundColor: '#10b981', boxShadow: '0 0 20px rgba(16,185,129,0.4)' }}>
             <Send size={15} /> Submit Test
           </button>
         )}
       </div>
 
-      {/* Unanswered warning on last question */}
+      {/* Unanswered Warning on Last Question */}
       {current === questions.length - 1 && answered < questions.length && (
-        <Alert
-          type="warning"
-          message={`${questions.length - answered} question(s) unanswered. Unanswered questions will be marked as incorrect.`}
-        />
+        <div style={{ padding: '16px', backgroundColor: 'rgba(251, 191, 36, 0.1)', border: '1px solid rgba(251, 191, 36, 0.3)', borderRadius: '12px', color: '#fbbf24', textAlign: 'center', fontWeight: 'normal', fontSize: '14px' }}>
+          {questions.length - answered} question(s) unanswered. Unanswered questions will be marked as incorrect.
+        </div>
       )}
-    </div>
+
+    </BaseLayout>
   );
 }

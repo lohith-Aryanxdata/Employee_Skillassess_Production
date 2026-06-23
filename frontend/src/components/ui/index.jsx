@@ -4,36 +4,53 @@ import { X, AlertCircle, CheckCircle, Info, AlertTriangle } from "lucide-react";
 
 // ── Spinner ────────────────────────────────────────────────────────────────────
 export function Spinner({ size = "md", className = "" }) {
-  const sizes = { sm: "h-4 w-4", md: "h-6 w-6", lg: "h-8 w-8", xl: "h-12 w-12" };
+  const sizes = { sm: 16, md: 24, lg: 32, xl: 48 };
+  const px = sizes[size] ?? 24;
   return (
-    <div className={cn("animate-spin rounded-full border-2 border-surface-200 border-t-brand-600", sizes[size], className)} />
+    <div
+      className={className}
+      style={{
+        width: px, height: px, borderRadius: "50%",
+        border: "2px solid rgba(255,255,255,0.1)",
+        borderTopColor: "#a855f7",
+        animation: "spin 0.7s linear infinite",
+        flexShrink: 0,
+      }}
+    />
   );
 }
 
 export function PageLoader() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-surface-50">
-      <div className="flex flex-col items-center gap-3">
+    <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "#070B14" }}>
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "12px" }}>
         <Spinner size="xl" />
-        <p className="text-sm text-slate-500">Loading…</p>
+        <p style={{ fontSize: "13px", color: "rgba(148,163,184,0.6)", margin: 0 }}>Loading…</p>
       </div>
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   );
 }
 
 // ── Badge ──────────────────────────────────────────────────────────────────────
-const BADGE_VARIANTS = {
-  default: "bg-surface-100 text-slate-600",
-  primary: "bg-brand-50 text-brand-700",
-  success: "bg-emerald-50 text-emerald-700",
-  warning: "bg-amber-50 text-amber-700",
-  danger: "bg-red-50 text-red-700",
-  info: "bg-blue-50 text-blue-700",
+const BADGE_STYLES = {
+  default: { background: "rgba(148,163,184,0.1)", color: "rgba(148,163,184,0.8)", border: "1px solid rgba(148,163,184,0.2)" },
+  primary: { background: "rgba(168,85,247,0.12)", color: "#c084fc", border: "1px solid rgba(168,85,247,0.25)" },
+  success: { background: "rgba(16,185,129,0.12)", color: "#34d399", border: "1px solid rgba(16,185,129,0.25)" },
+  warning: { background: "rgba(251,191,36,0.12)", color: "#fbbf24", border: "1px solid rgba(251,191,36,0.25)" },
+  danger: { background: "rgba(248,113,113,0.12)", color: "#f87171", border: "1px solid rgba(248,113,113,0.25)" },
+  info: { background: "rgba(59,130,246,0.12)", color: "#60a5fa", border: "1px solid rgba(59,130,246,0.25)" },
 };
 
 export function Badge({ children, variant = "default", className = "" }) {
+  const s = BADGE_STYLES[variant] ?? BADGE_STYLES.default;
   return (
-    <span className={cn("badge", BADGE_VARIANTS[variant], className)}>
+    <span className={className} style={{
+      display: "inline-flex", alignItems: "center",
+      padding: "3px 10px", borderRadius: "20px",
+      fontSize: "11px", fontWeight: 500,
+      ...s,
+    }}>
       {children}
     </span>
   );
@@ -41,61 +58,83 @@ export function Badge({ children, variant = "default", className = "" }) {
 
 // ── Avatar ─────────────────────────────────────────────────────────────────────
 export function Avatar({ name, size = "md", className = "" }) {
-  const sizes = { sm: "h-8 w-8 text-xs", md: "h-10 w-10 text-sm", lg: "h-12 w-12 text-base" };
+  const sizes = { sm: 32, md: 40, lg: 48 };
+  const fontSizes = { sm: 11, md: 13, lg: 15 };
+  const px = sizes[size] ?? 40;
   return (
-    <div className={cn("rounded-full gradient-brand flex items-center justify-center text-white font-semibold flex-shrink-0", sizes[size], className)}>
+    <div className={className} style={{
+      width: px, height: px, borderRadius: "50%",
+      background: "rgba(168,85,247,0.18)",
+      border: "1.5px solid rgba(168,85,247,0.3)",
+      display: "flex", alignItems: "center", justifyContent: "center",
+      color: "#c084fc", fontSize: fontSizes[size] ?? 13,
+      fontWeight: 500, flexShrink: 0,
+    }}>
       {getInitials(name)}
     </div>
   );
 }
 
 // ── Progress Bar ───────────────────────────────────────────────────────────────
+const PROGRESS_COLORS = {
+  brand: "#a855f7",
+  success: "#10b981",
+  warning: "#fbbf24",
+  danger: "#f87171",
+};
+
 export function ProgressBar({ value, max = 100, className = "", color = "brand", showLabel = false }) {
   const pct = Math.min(100, Math.max(0, (value / max) * 100));
-  const colors = {
-    brand: "bg-brand-600",
-    success: "bg-emerald-500",
-    warning: "bg-amber-500",
-    danger: "bg-red-500",
-  };
   return (
-    <div className={cn("flex items-center gap-2", className)}>
-      <div className="flex-1 h-2 bg-surface-200 rounded-full overflow-hidden">
-        <div
-          className={cn("h-full rounded-full transition-all duration-500", colors[color])}
-          style={{ width: `${pct}%` }}
-        />
+    <div className={className} style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+      <div style={{ flex: 1, height: "6px", background: "rgba(255,255,255,0.08)", borderRadius: "999px", overflow: "hidden" }}>
+        <div style={{
+          height: "100%", borderRadius: "999px",
+          background: PROGRESS_COLORS[color] ?? PROGRESS_COLORS.brand,
+          width: `${pct}%`, transition: "width 0.5s ease",
+        }} />
       </div>
-      {showLabel && <span className="text-xs text-slate-500 w-9 text-right">{pct.toFixed(0)}%</span>}
+      {showLabel && (
+        <span style={{ fontSize: "11px", color: "rgba(148,163,184,0.6)", minWidth: "32px", textAlign: "right" }}>
+          {pct.toFixed(0)}%
+        </span>
+      )}
     </div>
   );
 }
 
 // ── Stat Card ──────────────────────────────────────────────────────────────────
+const STAT_ICON_COLORS = {
+  brand: { bg: "rgba(168,85,247,0.12)", color: "#c084fc", border: "rgba(168,85,247,0.2)" },
+  success: { bg: "rgba(16,185,129,0.12)", color: "#10b981", border: "rgba(16,185,129,0.2)" },
+  warning: { bg: "rgba(251,191,36,0.12)", color: "#fbbf24", border: "rgba(251,191,36,0.2)" },
+  danger: { bg: "rgba(248,113,113,0.12)", color: "#f87171", border: "rgba(248,113,113,0.2)" },
+  info: { bg: "rgba(59,130,246,0.12)", color: "#60a5fa", border: "rgba(59,130,246,0.2)" },
+};
+
 export function StatCard({ title, value, subtitle, icon: Icon, trend, color = "brand", className = "" }) {
-  const iconColors = {
-    brand: "bg-brand-50 text-brand-600",
-    success: "bg-emerald-50 text-emerald-600",
-    warning: "bg-amber-50 text-amber-600",
-    danger: "bg-red-50 text-red-600",
-    info: "bg-blue-50 text-blue-600",
-  };
+  const ic = STAT_ICON_COLORS[color] ?? STAT_ICON_COLORS.brand;
   return (
-    <div className={cn("stat-card animate-slide-up", className)}>
-      <div className="flex items-start justify-between">
-        <div className="flex-1 min-w-0">
-          <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">{title}</p>
-          <p className="text-2xl font-bold text-slate-900 mt-1">{value ?? "—"}</p>
-          {subtitle && <p className="text-xs text-slate-500 mt-0.5">{subtitle}</p>}
+    <div className={className} style={{
+      background: "rgba(15,20,32,0.9)",
+      border: `1px solid ${ic.border}`,
+      borderRadius: "14px", padding: "20px 18px",
+      display: "flex", flexDirection: "column", gap: "4px",
+    }}>
+      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <p style={{ fontSize: "10px", color: "rgba(148,163,184,0.55)", textTransform: "uppercase", letterSpacing: "1px", margin: "0 0 8px" }}>{title}</p>
+          <p style={{ fontSize: "26px", fontWeight: 500, color: ic.color, fontFamily: "monospace", margin: 0 }}>{value ?? "—"}</p>
+          {subtitle && <p style={{ fontSize: "11px", color: "rgba(148,163,184,0.4)", margin: "5px 0 0" }}>{subtitle}</p>}
         </div>
         {Icon && (
-          <div className={cn("p-2.5 rounded-lg flex-shrink-0 ml-3", iconColors[color])}>
-            <Icon size={20} />
+          <div style={{ padding: "10px", borderRadius: "10px", background: ic.bg, border: `1px solid ${ic.border}`, color: ic.color, flexShrink: 0, marginLeft: "12px" }}>
+            <Icon size={18} />
           </div>
         )}
       </div>
       {trend !== undefined && (
-        <p className={cn("text-xs font-medium mt-2", trend >= 0 ? "text-emerald-600" : "text-red-500")}>
+        <p style={{ fontSize: "11px", fontWeight: 500, margin: "4px 0 0", color: trend >= 0 ? "#10b981" : "#f87171" }}>
           {trend >= 0 ? "▲" : "▼"} {Math.abs(trend)}% vs last month
         </p>
       )}
@@ -106,15 +145,15 @@ export function StatCard({ title, value, subtitle, icon: Icon, trend, color = "b
 // ── Empty State ────────────────────────────────────────────────────────────────
 export function EmptyState({ icon: Icon, title, description, action }) {
   return (
-    <div className="flex flex-col items-center justify-center py-16 px-4 text-center">
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "64px 16px", textAlign: "center" }}>
       {Icon && (
-        <div className="p-4 bg-surface-100 rounded-full mb-4">
-          <Icon size={28} className="text-slate-400" />
+        <div style={{ padding: "16px", background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "50%", marginBottom: "16px" }}>
+          <Icon size={28} color="rgba(148,163,184,0.5)" />
         </div>
       )}
-      <h3 className="text-base font-semibold text-slate-700">{title}</h3>
-      {description && <p className="text-sm text-slate-500 mt-1 max-w-xs">{description}</p>}
-      {action && <div className="mt-4">{action}</div>}
+      <h3 style={{ fontSize: "15px", fontWeight: 500, color: "#ffffff", margin: "0 0 6px" }}>{title}</h3>
+      {description && <p style={{ fontSize: "13px", color: "rgba(148,163,184,0.6)", margin: 0, maxWidth: "280px", lineHeight: "1.6" }}>{description}</p>}
+      {action && <div style={{ marginTop: "16px" }}>{action}</div>}
     </div>
   );
 }
@@ -129,23 +168,37 @@ export function Modal({ isOpen, onClose, title, children, size = "md" }) {
   }, [isOpen, onClose]);
 
   if (!isOpen) return null;
-  const sizes = { sm: "max-w-sm", md: "max-w-lg", lg: "max-w-2xl", xl: "max-w-4xl" };
+  const maxWidths = { sm: "420px", md: "560px", lg: "720px", xl: "960px" };
 
   return (
     <div
       ref={overlayRef}
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
-      style={{ background: "rgba(15,23,42,0.5)", backdropFilter: "blur(2px)" }}
+      style={{
+        position: "fixed", inset: 0, zIndex: 50,
+        display: "flex", alignItems: "center", justifyContent: "center", padding: "16px",
+        background: "rgba(7,11,20,0.7)", backdropFilter: "blur(4px)",
+      }}
       onClick={(e) => { if (e.target === overlayRef.current) onClose(); }}
     >
-      <div className={cn("w-full bg-white rounded-2xl shadow-2xl animate-slide-up", sizes[size])}>
-        <div className="flex items-center justify-between px-6 py-4 border-b border-surface-200">
-          <h2 className="text-base font-semibold text-slate-900">{title}</h2>
-          <button onClick={onClose} className="p-1.5 hover:bg-surface-100 rounded-lg transition-colors">
-            <X size={16} className="text-slate-500" />
+      <div style={{
+        width: "100%", maxWidth: maxWidths[size] ?? maxWidths.md,
+        background: "rgba(15,20,32,0.98)",
+        border: "1px solid rgba(168,85,247,0.2)",
+        borderRadius: "16px",
+        boxShadow: "0 24px 64px rgba(0,0,0,0.6)",
+      }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "18px 24px", borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
+          <h2 style={{ fontSize: "15px", fontWeight: 500, color: "#ffffff", margin: 0 }}>{title}</h2>
+          <button
+            onClick={onClose}
+            style={{ padding: "6px", borderRadius: "8px", background: "transparent", border: "none", cursor: "pointer", color: "rgba(148,163,184,0.6)", display: "flex" }}
+            onMouseEnter={(e) => e.currentTarget.style.background = "rgba(255,255,255,0.07)"}
+            onMouseLeave={(e) => e.currentTarget.style.background = "transparent"}
+          >
+            <X size={16} />
           </button>
         </div>
-        <div className="px-6 py-5">{children}</div>
+        <div style={{ padding: "24px" }}>{children}</div>
       </div>
     </div>
   );
@@ -153,18 +206,23 @@ export function Modal({ isOpen, onClose, title, children, size = "md" }) {
 
 // ── Alert ──────────────────────────────────────────────────────────────────────
 const ALERT_STYLES = {
-  error: { bg: "bg-red-50 border-red-200", text: "text-red-700", Icon: AlertCircle },
-  success: { bg: "bg-emerald-50 border-emerald-200", text: "text-emerald-700", Icon: CheckCircle },
-  warning: { bg: "bg-amber-50 border-amber-200", text: "text-amber-700", Icon: AlertTriangle },
-  info: { bg: "bg-blue-50 border-blue-200", text: "text-blue-700", Icon: Info },
+  error: { bg: "rgba(248,113,113,0.08)", border: "rgba(248,113,113,0.25)", color: "#f87171", Icon: AlertCircle },
+  success: { bg: "rgba(16,185,129,0.08)", border: "rgba(16,185,129,0.25)", color: "#34d399", Icon: CheckCircle },
+  warning: { bg: "rgba(251,191,36,0.08)", border: "rgba(251,191,36,0.25)", color: "#fbbf24", Icon: AlertTriangle },
+  info: { bg: "rgba(59,130,246,0.08)", border: "rgba(59,130,246,0.25)", color: "#60a5fa", Icon: Info },
 };
 
 export function Alert({ type = "info", message, className = "" }) {
-  const { bg, text, Icon } = ALERT_STYLES[type];
+  const s = ALERT_STYLES[type] ?? ALERT_STYLES.info;
   if (!message) return null;
   return (
-    <div className={cn("flex items-start gap-3 px-4 py-3 rounded-lg border text-sm", bg, text, className)}>
-      <Icon size={16} className="flex-shrink-0 mt-0.5" />
+    <div className={className} style={{
+      display: "flex", alignItems: "flex-start", gap: "10px",
+      padding: "12px 16px", borderRadius: "10px",
+      background: s.bg, border: `1px solid ${s.border}`,
+      fontSize: "13px", color: s.color, lineHeight: "1.5",
+    }}>
+      <s.Icon size={15} style={{ flexShrink: 0, marginTop: "1px" }} />
       <span>{message}</span>
     </div>
   );
@@ -172,14 +230,17 @@ export function Alert({ type = "info", message, className = "" }) {
 
 // ── Confirm Dialog ─────────────────────────────────────────────────────────────
 export function ConfirmDialog({ isOpen, onClose, onConfirm, title, message, confirmLabel = "Confirm", danger = false }) {
+  const btnBase = { padding: "8px 18px", borderRadius: "8px", fontSize: "13px", fontWeight: 500, cursor: "pointer", border: "none", transition: "opacity 0.15s" };
   return (
     <Modal isOpen={isOpen} onClose={onClose} title={title} size="sm">
-      <p className="text-sm text-slate-600 mb-6">{message}</p>
-      <div className="flex justify-end gap-3">
-        <button onClick={onClose} className="btn-secondary text-sm">Cancel</button>
+      <p style={{ fontSize: "13px", color: "rgba(148,163,184,0.75)", margin: "0 0 24px", lineHeight: "1.6" }}>{message}</p>
+      <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px" }}>
+        <button onClick={onClose} style={{ ...btnBase, background: "rgba(255,255,255,0.06)", color: "rgba(148,163,184,0.8)", border: "1px solid rgba(255,255,255,0.1)" }}>
+          Cancel
+        </button>
         <button
           onClick={() => { onConfirm(); onClose(); }}
-          className={danger ? "btn-danger text-sm" : "btn-primary text-sm"}
+          style={{ ...btnBase, background: danger ? "rgba(248,113,113,0.15)" : "rgba(168,85,247,0.15)", color: danger ? "#f87171" : "#c084fc", border: `1px solid ${danger ? "rgba(248,113,113,0.3)" : "rgba(168,85,247,0.3)"}` }}
         >
           {confirmLabel}
         </button>
@@ -189,49 +250,64 @@ export function ConfirmDialog({ isOpen, onClose, onConfirm, title, message, conf
 }
 
 // ── Score Ring ─────────────────────────────────────────────────────────────────
-// React Bits replacement: ShinyText / CountUp style animated score display
-// 👉 REACT BITS: Replace this with <CountUp> or <ShinyText> from React Bits for animated number reveal
-export function ScoreRing({ value, label, size = 120, color = "#4f46e5" }) {
-  const r = 46;
-  const circ = 2 * Math.PI * r;
-  const pct = Math.min(100, Math.max(0, value ?? 0));
-  const dash = (pct / 100) * circ;
+export function ScoreRing({ value, label, size = 130, color = "#a855f7" }) {
+  const radius = (size - 16) / 2;
+  const circumference = radius * 2 * Math.PI;
+  const offset = circumference - (value / 100) * circumference;
 
   return (
-    <div className="flex flex-col items-center gap-1.5">
-      <div className="relative" style={{ width: size, height: size }}>
-        <svg width={size} height={size} viewBox="0 0 100 100" className="-rotate-90">
-          <circle cx="50" cy="50" r={r} fill="none" stroke="#e2e8f0" strokeWidth="8" />
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "14px" }}>
+      <div style={{ position: "relative", width: size, height: size }}>
+        <svg width={size} height={size} style={{ transform: "rotate(-90deg)" }}>
+          <circle cx={size / 2} cy={size / 2} r={radius} stroke="rgba(255,255,255,0.08)" strokeWidth="8" fill="none" />
           <circle
-            cx="50" cy="50" r={r} fill="none"
-            stroke={color} strokeWidth="8"
+            cx={size / 2} cy={size / 2} r={radius}
+            stroke={color} strokeWidth="8" fill="none"
+            strokeDasharray={circumference} strokeDashoffset={offset}
             strokeLinecap="round"
-            strokeDasharray={`${dash} ${circ}`}
-            style={{ transition: "stroke-dasharray 1s ease-out" }}
+            style={{ transition: "stroke-dashoffset 1s ease-in-out" }}
           />
         </svg>
-        <div className="absolute inset-0 flex items-center justify-center">
-          <span className="text-xl font-bold text-slate-900">{pct.toFixed(0)}%</span>
+        <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "26px", fontWeight: 500, color: "#ffffff", fontFamily: "monospace" }}>
+          {value}%
         </div>
       </div>
-      {label && <p className="text-xs font-medium text-slate-500 text-center">{label}</p>}
+      {label && <div style={{ color: "rgba(148,163,184,0.65)", fontSize: "13px" }}>{label}</div>}
     </div>
   );
 }
 
 // ── CAI Meter ─────────────────────────────────────────────────────────────────
-// 👉 REACT BITS: Replace with <GlowCard> or <MagicCard> wrapper from React Bits
 export function CAIMeter({ value }) {
-  const pct = value ?? 0;
-  const color = pct >= 80 ? "#059669" : pct >= 60 ? "#d97706" : "#dc2626";
-  const label = pct >= 80 ? "Excellent" : pct >= 60 ? "Good" : "Needs Work";
+  const size = 130;
+  const radius = (size - 16) / 2;
+  const circumference = radius * 2 * Math.PI;
+  const offset = circumference - ((value || 0) / 100) * circumference;
+  const color = value >= 80 ? "#10b981" : value >= 60 ? "#fbbf24" : "#f87171";
+  const statusText = value >= 80 ? "Well calibrated" : value >= 60 ? "Slightly off" : "Needs work";
+
   return (
-    <div className="flex flex-col items-center gap-3 p-4 rounded-xl bg-gradient-to-b from-slate-50 to-white border border-surface-200">
-      <ScoreRing value={pct} label="Confidence Accuracy" size={110} color={color} />
-      <Badge variant={pct >= 80 ? "success" : pct >= 60 ? "warning" : "danger"}>{label}</Badge>
-      <p className="text-xs text-slate-500 text-center max-w-[160px]">
-        How well your self-perception matches reality
-      </p>
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "14px", textAlign: "center" }}>
+      <div style={{ position: "relative", width: size, height: size }}>
+        <svg width={size} height={size} style={{ transform: "rotate(-90deg)" }}>
+          <circle cx={size / 2} cy={size / 2} r={radius} stroke="rgba(255,255,255,0.08)" strokeWidth="8" fill="none" />
+          <circle
+            cx={size / 2} cy={size / 2} r={radius}
+            stroke={color} strokeWidth="8" fill="none"
+            strokeDasharray={circumference} strokeDashoffset={offset}
+            strokeLinecap="round"
+            style={{ transition: "stroke-dashoffset 1s ease-in-out" }}
+          />
+        </svg>
+        <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: "26px", fontWeight: 500, color: "#ffffff", fontFamily: "monospace" }}>
+          {value != null ? `${Math.round(value)}%` : "—"}
+        </div>
+      </div>
+      <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+        <div style={{ color: "rgba(255,255,255,0.75)", fontSize: "13px" }}>Confidence accuracy</div>
+        <div style={{ color, fontSize: "13px", fontWeight: 500 }}>{statusText}</div>
+        <div style={{ color: "rgba(148,163,184,0.4)", fontSize: "11px", marginTop: "2px", lineHeight: "1.5" }}>How well your self-perception matches reality</div>
+      </div>
     </div>
   );
 }

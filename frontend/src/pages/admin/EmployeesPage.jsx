@@ -5,6 +5,8 @@ import { Spinner, Alert, Avatar, Badge, EmptyState } from "@/components/ui";
 import { formatDate, formatPercent } from "@/utils/helpers";
 import { UserPlus, Search, Pencil, Trash2, Users } from "lucide-react";
 import DotField from "@/component/DotField/DotField";
+import BubbleMenu from "@/component/BubbleMenu/BubbleMenu";
+
 
 function EmployeeForm({ initial = {}, onSave, onCancel, loading, error }) {
   const [form, setForm] = useState({
@@ -314,6 +316,16 @@ export default function EmployeesPage() {
               </button>
             </div>
           </div>
+
+          <BubbleMenu
+            menuBg="#8400ff"
+            menuContentColor="#ffffff"
+            items={[
+              { label: 'Employees', href: '/admin/employees', rotation: 0, hoverStyles: { bgColor: '#a855f7', textColor: '#ffffff' } },
+              { label: 'Questions', href: '/admin/questions', rotation: 0, hoverStyles: { bgColor: '#10b981', textColor: '#ffffff' } },
+              { label: 'Analytics', href: '/admin/analytics', rotation: 0, hoverStyles: { bgColor: '#f59e0b', textColor: '#ffffff' } }
+            ]}
+          />
         </div>
       )}
     </div>

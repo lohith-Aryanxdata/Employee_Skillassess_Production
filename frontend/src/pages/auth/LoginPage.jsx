@@ -80,14 +80,6 @@ export default function LoginPage() {
 
 
 
-      {/* Logo — fixed top left */}
-      <div className="fixed top-5 left-5 z-20">
-        <Magnet padding={60} magnetStrength={2.5}>
-          <div className="inline-flex p-3 rounded-2xl gradient-brand shadow-lg shadow-brand-500/30">
-            <Zap size={24} className="text-white" />
-          </div>
-        </Magnet>
-      </div>
 
       {/* Header — fixed to top center */}
       <div style={{ position: "fixed", top: "2rem", left: 0, right: 0, zIndex: 20, display: "flex", flexDirection: "column", alignItems: "center", gap: "0.5rem" }}>
@@ -96,24 +88,27 @@ export default function LoginPage() {
           tag="h1"
           className="text-1xl font-bold text-white"
           splitType="words"
-          delay={60}
-          duration={0.7}
+          delay={700}
+          duration={5}
           from={{ opacity: 0, y: 12 }}
           to={{ opacity: 1, y: 0 }}
           textAlign="center"
         />
+        <p> </p>
         <SplitText
-          text="Sign in to your Sceniuz account"
+          text="Sign in using your Sceniuz credentials"
           tag="p"
           className="text-sm text-white/50"
           splitType="words"
-          delay={60}
-          duration={0.6}
+          delay={200}
+          duration={1}
           from={{ opacity: 0, y: 10 }}
           to={{ opacity: 1, y: 0 }}
           textAlign="center"
         />
       </div>
+      <p><br /><br /></p>
+
 
       {/* Centered content */}
       <div className="relative z-10 w-full max-w-sm px-4 animate-slide-up">
@@ -121,7 +116,7 @@ export default function LoginPage() {
         {/* Card */}
         <SpotlightCard
           className="w-full rounded-2xl border border-white/10 shadow-2xl backdrop-blur-xl"
-          spotlightColor="rgba(222, 222, 223, 0.7)"
+          spotlightColor="rgba(222, 222, 223, 0.5)"
         >
           <div className="p-8">
 
@@ -151,6 +146,7 @@ export default function LoginPage() {
                     placeholder="you@company.com"
                   />
                 </div>
+                <p> <br />  </p>
 
                 {/* Password */}
                 <div className="flex flex-col gap-2">
@@ -181,7 +177,7 @@ export default function LoginPage() {
                     </button>
                   </div>
                 </div>
-
+                <p> <br />  </p>
                 {/* Sign in button */}
                 <button
                   type="submit"
@@ -197,28 +193,21 @@ export default function LoginPage() {
 
               </div>
             </form>
-
+            <p> <br />  </p>
             {/* Demo credentials */}
-            <div className="mt-6 pt-5 border-t border-white/[0.06]">
-              <p className="text-[10px] font-semibold text-white/20 uppercase tracking-widest mb-2.5">
-                Demo credentials
+            <div className="mt-6 pt-7 border-t border-white/[0.06]">
+              <p className="text-[15px] font-semibold text-white/20 uppercase tracking-widest mb-5">
+                Demo credentials <br />
+                Admin · admin@skillassess.io / Admin@123 <br />
+                Employee · aarav@skillassess.io / Employee@123 <br />
               </p>
-              <div className="space-y-1 font-mono text-[11px] text-white/25">
-                <p><span className="text-brand-400/50">Admin</span>{" · "}admin@skillassess.io / Admin@123</p>
-                <p><span className="text-emerald-400/50">Employee</span>{" · "}aarav@skillassess.io / Employee@123</p>
-              </div>
             </div>
-
           </div>
+
         </SpotlightCard>
 
-      </div>
+      </div >
 
-      {/* Footer — fixed bottom */}
-      <p className="fixed bottom-5 left-1/2 -translate-x-1/2 z-20 text-[11px] text-white/20 whitespace-nowrap">
-        © 2024 SkillAssess Platform. All rights reserved.
-      </p>
-
-    </div>
+    </div >
   );
 }

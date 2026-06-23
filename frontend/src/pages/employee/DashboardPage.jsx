@@ -3,38 +3,108 @@ import { Link } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { useApi } from "@/hooks/useApi";
 import { userService } from "@/services";
-import { StatCard, ScoreRing, CAIMeter, Badge, Spinner, Alert } from "@/components/ui";
+import { ScoreRing, CAIMeter, Spinner, Alert } from "@/components/ui";
 import { formatPercent } from "@/utils/helpers";
-import { Brain, ClipboardCheck, Trophy, ArrowRight, CheckCircle, Clock } from "lucide-react";
+import { Brain, ClipboardCheck, Trophy, ArrowRight, CheckCircle, Clock, Lock } from "lucide-react";
+import DotField from "@/component/DotField/DotField";
 
-// 👉 REACT BITS: Replace the welcome banner with <BlurText> or <TextReveal> for animated greeting
-// 👉 REACT BITS: Wrap stat cards with <MagicCard> from React Bits for hover glow effect
-// 👉 REACT BITS: Add <AnimatedList> to the action steps section
+const STAT_CARDS = [
+  { key: "selfScore", label: "Self score", sub: "Your perceived level", color: "#c084fc", border: "rgba(168,85,247,0.2)" },
+  { key: "actualScore", label: "Actual score", sub: "MCQ test result", color: "#10b981", border: "rgba(16,185,129,0.2)" },
+  { key: "cai", label: "Accuracy index", sub: "Self-perception accuracy", color: null, border: null },
+  { key: "status", label: "Status", sub: "Assessments completed", color: "#60a5fa", border: "rgba(59,130,246,0.2)" },
+];
 
-function StatusBadge({ done }) {
-  return done
-    ? <Badge variant="success"><CheckCircle size={11} /> Completed</Badge>
-    : <Badge variant="warning"><Clock size={11} /> Pending</Badge>;
+function caiColor(v) {
+  if (v == null) return "#fbbf24";
+  return v >= 80 ? "#10b981" : v >= 60 ? "#fbbf24" : "#f87171";
+}
+function caiBorder(v) {
+  if (v == null) return "rgba(251,191,36,0.2)";
+  return v >= 80 ? "rgba(16,185,129,0.2)" : v >= 60 ? "rgba(251,191,36,0.2)" : "rgba(248,113,113,0.2)";
 }
 
-function ActionCard({ icon: Icon, title, description, to, done, disabled }) {
+function StatCard({ label, value, sub, color, border }) {
+  return (
+    <div style={{
+      background: "rgba(15,20,32,0.9)", border: `1px solid ${border}`,
+      borderRadius: "14px", padding: "20px 18px",
+    }}>
+      <div style={{ fontSize: "10px", color: "rgba(148,163,184,0.55)", textTransform: "uppercase", letterSpacing: "1px", marginBottom: "10px" }}>
+        {label}
+      </div>
+      <div style={{ fontSize: "28px", fontWeight: 500, color, fontFamily: "monospace" }}>{value}</div>
+      <div style={{ fontSize: "11px", color: "rgba(148,163,184,0.4)", marginTop: "6px" }}>{sub}</div>
+    </div>
+  );
+}
+
+function StatusBadge({ done }) {
+  return (
+    <span style={{
+      display: "flex", alignItems: "center", gap: "5px",
+      padding: "3px 10px", borderRadius: "20px", fontSize: "10px",
+      background: done ? "rgba(16,185,129,0.1)" : "rgba(251,191,36,0.1)",
+      border: done ? "1px solid rgba(16,185,129,0.25)" : "1px solid rgba(251,191,36,0.25)",
+      color: done ? "#34d399" : "#fbbf24",
+    }}>
+      {done ? <CheckCircle size={11} /> : <Clock size={11} />}
+      {done ? "Completed" : "Pending"}
+    </span>
+  );
+}
+
+function StepCard({ icon: Icon, title, description, to, done, disabled, accentColor = "#a855f7", accentBg = "rgba(168,85,247,0.12)", accentBorder = "rgba(168,85,247,0.2)", unlockMsg }) {
+  const active = !done && !disabled;
   return (
     <Link
-      to={done || disabled ? "#" : to}
-      className={`card p-5 flex items-start gap-4 transition-all duration-200 ${done ? "opacity-60" : disabled ? "opacity-40 cursor-not-allowed" : "hover:shadow-card-hover hover:-translate-y-0.5 cursor-pointer"}`}
-      onClick={(e) => (done || disabled) && e.preventDefault()}
+      to={active ? to : "#"}
+      onClick={(e) => !active && e.preventDefault()}
+      style={{
+        display: "flex", alignItems: "flex-start", gap: "16px",
+        padding: "20px", borderRadius: "14px", textDecoration: "none",
+        background: disabled ? "rgba(15,20,32,0.5)" : "rgba(15,20,32,0.9)",
+        border: done
+          ? "1px solid rgba(16,185,129,0.25)"
+          : disabled
+            ? "1px solid rgba(168,85,247,0.08)"
+            : "1px solid rgba(168,85,247,0.35)",
+        opacity: disabled ? 0.45 : 1,
+        cursor: active ? "pointer" : "default",
+        position: "relative", overflow: "hidden",
+        transition: "border-color 0.2s",
+      }}
     >
-      <div className={`p-2.5 rounded-lg flex-shrink-0 ${done ? "bg-emerald-50" : "bg-brand-50"}`}>
-        <Icon size={20} className={done ? "text-emerald-600" : "text-brand-600"} />
+      <div style={{
+        position: "absolute", top: 0, left: 0, width: "3px", height: "100%",
+        background: done ? "#10b981" : disabled ? "rgba(168,85,247,0.15)" : accentColor,
+        borderRadius: "14px 0 0 14px",
+      }} />
+      <div style={{
+        padding: "11px", borderRadius: "12px", flexShrink: 0,
+        background: done ? "rgba(16,185,129,0.1)" : accentBg,
+        color: done ? "#10b981" : disabled ? `${accentColor}66` : accentColor,
+        border: `1px solid ${done ? "rgba(16,185,129,0.2)" : accentBorder}`,
+      }}>
+        <Icon size={20} />
       </div>
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center justify-between gap-2">
-          <h3 className="text-sm font-semibold text-slate-800">{title}</h3>
-          <StatusBadge done={done} />
+      <div style={{ flex: 1 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <span style={{ fontSize: "15px", color: disabled ? "rgba(255,255,255,0.5)" : "#ffffff", fontWeight: 500 }}>{title}</span>
+            {disabled && unlockMsg && (
+              <span style={{ display: "flex", alignItems: "center", gap: "4px", fontSize: "10px", color: "rgba(148,163,184,0.4)" }}>
+                <Lock size={10} />{unlockMsg}
+              </span>
+            )}
+          </div>
+          {!disabled && <StatusBadge done={done} />}
         </div>
-        <p className="text-xs text-slate-500 mt-0.5">{description}</p>
+        <p style={{ margin: 0, fontSize: "12px", color: disabled ? "rgba(148,163,184,0.4)" : "rgba(148,163,184,0.65)", lineHeight: "1.6" }}>
+          {description}
+        </p>
       </div>
-      {!done && !disabled && <ArrowRight size={16} className="text-slate-400 mt-0.5 flex-shrink-0" />}
+      {active && <ArrowRight size={16} color="rgba(255,255,255,0.35)" style={{ marginTop: "3px", flexShrink: 0 }} />}
     </Link>
   );
 }
@@ -44,99 +114,99 @@ export default function EmployeeDashboard() {
   const { data, loading, error } = useApi(() => userService.getDashboard());
 
   if (loading) return (
-    <div className="flex items-center justify-center py-24"><Spinner size="lg" /></div>
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "100px" }}>
+      <Spinner size="lg" />
+    </div>
   );
 
   const d = data || {};
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
+  const allDone = d.selfAssessmentCompleted && d.testCompleted;
+  const completed = [d.selfAssessmentCompleted, d.testCompleted].filter(Boolean).length;
 
   return (
-    <div className="space-y-6">
-      {/* Welcome Banner */}
-      {/* 👉 REACT BITS: Replace with <BlurText> animated entrance */}
-      <div className="card p-6 gradient-brand text-white">
-        <p className="text-sm font-medium text-brand-200">{greeting},</p>
-        <h1 className="text-2xl font-bold mt-0.5">{user?.name} 👋</h1>
-        <p className="text-brand-200 text-sm mt-1">
-          {d.selfAssessmentCompleted && d.testCompleted
-            ? "You've completed all assessments. Check your results below!"
+    <div style={{ position: "relative", minHeight: "100vh", padding: "32px", display: "flex", flexDirection: "column", gap: "28px" }}>
+      <div style={{ position: "fixed", inset: 0, zIndex: -1, pointerEvents: "none", backgroundColor: "#070B14" }}>
+        <DotField dotRadius={1.5} dotSpacing={24} gradientFrom="rgba(233,213,255,0.18)" gradientTo="rgba(192,132,252,0.08)" sparkle={false} waveAmplitude={4} />
+      </div>
+
+      {/* Welcome */}
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", gap: "6px", padding: "12px 0 4px" }}>
+        <p style={{ fontSize: "13px", color: "#c084fc", margin: 0, letterSpacing: "0.3px" }}>{greeting},</p>
+        <h1 style={{ fontSize: "34px", color: "#ffffff", margin: 0, fontWeight: 500, letterSpacing: "-0.5px" }}>{user?.name}</h1>
+        <p style={{ fontSize: "13px", color: "rgba(255,255,255,0.5)", marginTop: "6px", marginBottom: 0, maxWidth: "420px", lineHeight: "1.6" }}>
+          {allDone
+            ? "You've completed all assessments. Check your results below."
             : "Complete your self-assessment and MCQ test to see your results."}
         </p>
       </div>
 
       {error && <Alert type="error" message={error} />}
 
-      {/* Stat Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard
-          title="Self Score"
-          value={d.selfScore != null ? formatPercent(d.selfScore) : "—"}
-          subtitle="Your perceived level"
-          color="brand"
-        />
-        <StatCard
-          title="Actual Score"
-          value={d.actualScore != null ? formatPercent(d.actualScore) : "—"}
-          subtitle="MCQ test result"
-          color="success"
-        />
-        <StatCard
-          title="Accuracy Index"
-          value={d.cai != null ? formatPercent(d.cai) : "—"}
-          subtitle="Self-perception accuracy"
-          color={d.cai >= 80 ? "success" : d.cai >= 60 ? "warning" : "danger"}
-        />
-        <StatCard
-          title="Status"
-          value={d.testCompleted ? "All done" : d.selfAssessmentCompleted ? "1 / 2" : "0 / 2"}
-          subtitle="Assessments completed"
-          color="info"
-        />
+      {/* Stat cards */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: "12px" }}>
+        <StatCard label="Self score" value={d.selfScore != null ? formatPercent(d.selfScore) : "—"} sub="Your perceived level" color="#c084fc" border="rgba(168,85,247,0.2)" />
+        <StatCard label="Actual score" value={d.actualScore != null ? formatPercent(d.actualScore) : "—"} sub="MCQ test result" color="#10b981" border="rgba(16,185,129,0.2)" />
+        <StatCard label="Accuracy index" value={d.cai != null ? formatPercent(d.cai) : "—"} sub="Self-perception accuracy" color={caiColor(d.cai)} border={caiBorder(d.cai)} />
+        <StatCard label="Status" value={d.testCompleted ? "All done" : `${completed} / 2`} sub="Assessments completed" color="#60a5fa" border="rgba(59,130,246,0.2)" />
       </div>
 
-      {/* Scores + CAI */}
+      {/* Score rings */}
       {(d.selfScore != null || d.actualScore != null) && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="card p-5 flex flex-col items-center gap-3">
-            <ScoreRing value={d.selfScore ?? 0} label="Self Assessment" size={110} color="#6366f1" />
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "16px" }}>
+          <div style={{ background: "rgba(15,20,32,0.9)", border: "1px solid rgba(168,85,247,0.2)", borderRadius: "14px", padding: "32px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+            <ScoreRing value={d.selfScore ?? 0} label="Self assessment" size={130} color="#a855f7" />
           </div>
-          <div className="card p-5 flex flex-col items-center gap-3">
-            <ScoreRing value={d.actualScore ?? 0} label="Actual Score" size={110} color="#059669" />
+          <div style={{ background: "rgba(15,20,32,0.9)", border: "1px solid rgba(16,185,129,0.2)", borderRadius: "14px", padding: "32px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+            <ScoreRing value={d.actualScore ?? 0} label="Actual score" size={130} color="#10b981" />
           </div>
-          <CAIMeter value={d.cai} />
+          <div style={{ background: "rgba(15,20,32,0.9)", border: "1px solid rgba(168,85,247,0.2)", borderRadius: "14px", padding: "32px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+            <CAIMeter value={d.cai} />
+          </div>
         </div>
       )}
 
-      {/* Action Steps */}
+      {/* Journey steps */}
       <div>
-        <h2 className="section-title">Your Journey</h2>
-        <div className="space-y-3">
-          <ActionCard
+        <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "16px" }}>
+          <span style={{ fontSize: "11px", color: "rgba(148,163,184,0.4)", textTransform: "uppercase", letterSpacing: "1.2px" }}>Your journey</span>
+          <div style={{ flex: 1, height: "1px", background: "rgba(255,255,255,0.06)" }} />
+          <span style={{ fontSize: "11px", color: "rgba(148,163,184,0.3)" }}>{completed} of 3 complete</span>
+        </div>
+        <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+          <StepCard
             icon={Brain}
-            title="Self Assessment"
-            description="Rate yourself on 6 key skills (HTML, CSS, JS, React, Communication, Problem Solving)"
+            title="Self assessment"
+            description="Rate yourself on 6 key skills: HTML, CSS, JS, React, Communication, Problem Solving"
             to="/self-assessment"
             done={d.selfAssessmentCompleted}
           />
-          <ActionCard
+          <StepCard
             icon={ClipboardCheck}
-            title="MCQ Test"
+            title="MCQ test"
             description="Take the 20-question timed test to measure your actual knowledge"
             to="/test"
             done={d.testCompleted}
             disabled={!d.selfAssessmentCompleted}
+            unlockMsg="Unlocks after step 1"
           />
-          <ActionCard
+          <StepCard
             icon={Trophy}
-            title="View Results & Leaderboard"
+            title="Results & leaderboard"
             description="See your scores, confidence accuracy index, and where you rank"
             to="/results"
             done={false}
             disabled={!d.testCompleted}
+            accentColor="#fbbf24"
+            accentBg="rgba(251,191,36,0.08)"
+            accentBorder="rgba(251,191,36,0.2)"
+            unlockMsg="Unlocks after step 2"
           />
         </div>
       </div>
+
+      <style>{`@keyframes fadeUp { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }`}</style>
     </div>
   );
 }
