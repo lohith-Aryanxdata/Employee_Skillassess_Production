@@ -28,6 +28,7 @@ const getAllEmployees = async (req, res, next) => {
           name: true,
           email: true,
           department: true,
+          teamLead: true,
           createdAt: true,
           selfAssessment: { select: { overallPercentage: true } },
           testAttempts: {
@@ -54,7 +55,7 @@ const getEmployeeById = async (req, res, next) => {
     const employee = await prisma.user.findUnique({
       where: { id: req.params.id },
       select: {
-        id: true, name: true, email: true, department: true, createdAt: true,
+        id: true, name: true, email: true, department: true, teamLead: true, createdAt: true,
         selfAssessment: true,
         testAttempts: {
           where: { status: { in: ["SUBMITTED", "AUTO_SUBMITTED"] } },
@@ -72,14 +73,14 @@ const getEmployeeById = async (req, res, next) => {
 
 const createEmployee = async (req, res, next) => {
   try {
-    const { name, email, password, department } = req.body;
+    const { name, email, password, department, teamLead } = req.body;
     const exists = await prisma.user.findUnique({ where: { email: email.toLowerCase().trim() } });
     if (exists) return sendError(res, "Email already in use", 409);
 
     const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
     const employee = await prisma.user.create({
-      data: { name, email: email.toLowerCase().trim(), passwordHash, department, role: "EMPLOYEE" },
-      select: { id: true, name: true, email: true, department: true, createdAt: true },
+      data: { name, email: email.toLowerCase().trim(), passwordHash, department, teamLead, role: "EMPLOYEE" },
+      select: { id: true, name: true, email: true, department: true, teamLead: true, createdAt: true },
     });
     sendSuccess(res, { employee }, "Employee created", 201);
   } catch (err) {
@@ -90,7 +91,7 @@ const createEmployee = async (req, res, next) => {
 const updateEmployee = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { name, email, department, password } = req.body;
+    const { name, email, department, password, teamLead } = req.body;
 
     const existing = await prisma.user.findUnique({ where: { id } });
     if (!existing || existing.role === "ADMIN") return sendError(res, "Employee not found", 404);
@@ -100,11 +101,12 @@ const updateEmployee = async (req, res, next) => {
     if (email) data.email = email.toLowerCase().trim();
     if (department) data.department = department;
     if (password) data.passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
+    if (teamLead !== undefined) data.teamLead = teamLead;
 
     const employee = await prisma.user.update({
       where: { id },
       data,
-      select: { id: true, name: true, email: true, department: true },
+      select: { id: true, name: true, email: true, department: true, teamLead: true },
     });
     sendSuccess(res, { employee }, "Employee updated");
   } catch (err) {

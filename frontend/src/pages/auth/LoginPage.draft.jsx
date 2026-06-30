@@ -5,6 +5,7 @@ import { Mail, Lock, Eye, EyeOff } from "lucide-react";
 import SplitText from "@/components/SplitText";
 import Prism from "@/components/Prism";
 import styles from "./LoginPage.module.css";
+import BorderGlow from "@/component/BorderGlow/BorderGlow";
 
 export default function LoginPage() {
   const { login } = useAuth();
@@ -42,12 +43,6 @@ export default function LoginPage() {
     try {
       const user = await login(form.email, form.password);
       setSuccess(true);
-      setTimeout(() => {
-        navigate(
-          user.role === "ADMIN" ? "/admin/dashboard" : "/dashboard",
-          { replace: true }
-        );
-      }, 1000);
     } catch (err) {
       setError(
         err?.response?.data?.message ||
@@ -158,12 +153,71 @@ export default function LoginPage() {
               {loading ? "Signing in…" : "Sign In"}
             </button>
           </form>
-
-          {success && (
-            <p className={styles.toast}>Everything's ready. Jump in!</p>
-          )}
         </div>
       </div>
+      {success && (
+        <>
+          <style>{`
+            @keyframes slideInUp {
+              0% {
+                opacity: 0;
+                transform: translateY(40px) scale(0.9);
+              }
+              100% {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+              }
+            }
+          `}</style>
+          <div style={{
+            position: "fixed",
+            bottom: "30px",
+            right: "0px",
+            zIndex: 99999,
+            animation: "slideInUp 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards"
+          }}>
+            <BorderGlow
+              animated={true}
+              glowColor="270 90 60"
+              backgroundColor="rgba(10, 10, 16, 0.95)"
+              borderRadius={999}
+              glowRadius={15}
+              glowIntensity={1.0}
+              coneSpread={30}
+              colors={['#a855f7', '#6366f1', '#ec4899']}
+              fillOpacity={0.4}
+            >
+              <div style={{
+                padding: "10px 24px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "10px",
+                backgroundColor: "transparent",
+                color: "#ffffff",
+                whiteSpace: "nowrap"
+              }}>
+                <span style={{
+                  width: "8px",
+                  height: "8px",
+                  borderRadius: "50%",
+                  backgroundColor: "#22c55e",
+                  boxShadow: "0 0 8px #22c55e",
+                  display: "inline-block"
+                }} />
+                <span style={{
+                  fontSize: "14px",
+                  fontWeight: "600",
+                  letterSpacing: "0.2px",
+                  textShadow: "0 0 8px rgba(168, 85, 247, 0.4)"
+                }}>
+                  Knock Knock... You're In.
+                </span>
+              </div>
+            </BorderGlow>
+          </div>
+        </>
+      )}
     </div>
   );
 }

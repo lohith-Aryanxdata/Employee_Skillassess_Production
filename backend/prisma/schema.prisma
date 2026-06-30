@@ -38,6 +38,8 @@ model User {
   selfAssessment SelfAssessment?
   testAttempts   TestAttempt[]
 
+  teamLead      String?   @map("team_lead")
+
   @@map("users")
 }
 
