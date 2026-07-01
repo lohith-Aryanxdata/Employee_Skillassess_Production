@@ -21,6 +21,7 @@ const AdminDashboard = lazy(() => import("@/pages/admin/DashboardPage"));
 const EmployeesPage = lazy(() => import("@/pages/admin/EmployeesPage.draft"));
 const QuestionsPage = lazy(() => import("@/pages/admin/QuestionsPage"));
 const AnalyticsPage = lazy(() => import("@/pages/admin/AnalyticsPage"));
+const SuperAdminPage = lazy(() => import("@/pages/admin/SuperAdminPage"));
 
 // ── Wrappers ───────────────────────────────────────────────────────────────────
 function EmpPage({ children }) {
@@ -34,6 +35,14 @@ function EmpPage({ children }) {
 function AdmPage({ children }) {
   return (
     <ProtectedRoute requiredRole="ADMIN">
+      <AdminLayout>{children}</AdminLayout>
+    </ProtectedRoute>
+  );
+}
+
+function SuperAdmPage({ children }) {
+  return (
+    <ProtectedRoute requiredRole="SUPER_ADMIN">
       <AdminLayout>{children}</AdminLayout>
     </ProtectedRoute>
   );
@@ -64,6 +73,9 @@ export default function App() {
             <Route path="/admin/employees" element={<AdmPage><EmployeesPage /></AdmPage>} />
             <Route path="/admin/questions" element={<AdmPage><QuestionsPage /></AdmPage>} />
             <Route path="/admin/analytics" element={<AdmPage><AnalyticsPage /></AdmPage>} />
+
+            {/* Super Admin only routes */}
+            <Route path="/admin/super" element={<SuperAdmPage><SuperAdminPage /></SuperAdmPage>} />
 
             {/* 404 */}
             <Route path="*" element={

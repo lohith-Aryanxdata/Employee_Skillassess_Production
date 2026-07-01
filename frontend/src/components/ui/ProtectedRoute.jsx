@@ -3,6 +3,9 @@ import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { PageLoader } from "@/components/ui";
 
+// Roles that have admin panel access
+const ADMIN_ROLES = ["ADMIN", "SUPER_ADMIN"];
+
 export function ProtectedRoute({ children, requiredRole }) {
   const { isAuthenticated, isLoading, user } = useAuth();
   const location = useLocation();
@@ -13,10 +16,16 @@ export function ProtectedRoute({ children, requiredRole }) {
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  if (requiredRole && user?.role !== requiredRole) {
-    // Redirect to appropriate home based on actual role
-    const home = user?.role === "ADMIN" ? "/admin/dashboard" : "/dashboard";
-    return <Navigate to={home} replace />;
+  if (requiredRole) {
+    // "ADMIN" requirement is satisfied by both ADMIN and SUPER_ADMIN
+    if (requiredRole === "ADMIN" && ADMIN_ROLES.includes(user?.role)) {
+      return children;
+    }
+    // Exact role match for EMPLOYEE and SUPER_ADMIN-specific routes
+    if (user?.role !== requiredRole) {
+      const home = ADMIN_ROLES.includes(user?.role) ? "/admin/dashboard" : "/dashboard";
+      return <Navigate to={home} replace />;
+    }
   }
 
   return children;
@@ -40,7 +49,6 @@ export function GuestRoute({ children }) {
 
   // SYNCHRONOUS detection: if user was a guest and just became authenticated,
   // flag the delay immediately (before the return statement below).
-  // This prevents <Navigate> from rendering before the toast is shown.
   if (isAuthenticated && mountedAsGuest.current && !shouldDelay.current) {
     shouldDelay.current = true;
   }
@@ -49,7 +57,7 @@ export function GuestRoute({ children }) {
   useEffect(() => {
     if (!shouldDelay.current) return;
     const timer = setTimeout(() => {
-      const home = user?.role === "ADMIN" ? "/admin/dashboard" : "/dashboard";
+      const home = ADMIN_ROLES.includes(user?.role) ? "/admin/dashboard" : "/dashboard";
       shouldDelay.current = false;
       navigate(home, { replace: true });
       forceUpdate(n => n + 1);
@@ -64,7 +72,7 @@ export function GuestRoute({ children }) {
 
   // Already authenticated on page load (session restore) — redirect immediately
   if (isAuthenticated) {
-    const home = user?.role === "ADMIN" ? "/admin/dashboard" : "/dashboard";
+    const home = ADMIN_ROLES.includes(user?.role) ? "/admin/dashboard" : "/dashboard";
     return <Navigate to={home} replace />;
   }
 
