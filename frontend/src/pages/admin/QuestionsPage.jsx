@@ -96,8 +96,7 @@ export default function QuestionsPage() {
       <div style={{ textAlign: 'center' }}>
         <h3 style={{ color: "black" }}> . </h3>
         <h1 style={{ fontSize: '42px', color: '#ffffff', margin: 0 }}>Question Bank</h1>
-        <p style={{ color: "black" }}> . </p>
-        <p style={{ fontSize: '20px', color: '#ffffff', marginTop: '8px' }}>{data?.count ?? 0} questions across 14 topics</p>
+        <p style={{ fontSize: '20px', color: '#ffffff', marginTop: '8px', marginBottom: 0 }}>{(data?.questions ?? []).length} questions across {topics.length} topics</p>
         <p style={{ color: "black" }}> . </p>
         <button
           onClick={() => setModal({ mode: "create" })}
