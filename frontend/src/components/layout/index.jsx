@@ -75,14 +75,25 @@ function TopBar({ links }) {
           alignItems: "center",
         }}
       >
-        {/* Logo - Extreme Left */}
+        {/* Logo - Clean and Simple (As Is with White Background) */}
         <div className="flex items-center justify-start">
           <img
-            src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRsdIVsO7CdMYdMwJZ6-0NBn_vcHnIidX1s4SJof_xs&s"
+            src="/sceniuz_new_logo.png"
             alt="Sceniuz Logo"
-            style={{ height: '36px', width: 'auto', objectFit: 'contain', borderRadius: '4px' }}
+            style={{
+              height: "56px",
+              width: "auto",
+              display: "block",
+              borderRadius: "6px",
+            }}
           />
         </div>
+
+
+
+
+
+
 
         {/* Center-aligned Navbar */}
         <div className="flex justify-center">

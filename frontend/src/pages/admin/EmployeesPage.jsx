@@ -206,7 +206,7 @@ export default function EmployeesPage() {
                 <th style={{ padding: '16px', borderBottom: '1px solid rgba(255,255,255,0.1)', color: '#ffffff', fontSize: '14px', textTransform: 'uppercase' }}>Employee</th>
                 <th style={{ padding: '16px', borderBottom: '1px solid rgba(255,255,255,0.1)', color: '#ffffff', fontSize: '14px', textTransform: 'uppercase' }}>Department</th>
                 <th style={{ padding: '16px', borderBottom: '1px solid rgba(255,255,255,0.1)', color: '#ffffff', fontSize: '14px', textTransform: 'uppercase' }}>Self Score</th>
-                <th style={{ padding: '16px', borderBottom: '1px solid rgba(255,255,255,0.1)', color: '#ffffff', fontSize: '14px', textTransform: 'uppercase' }}>Actual Score</th>
+                <th style={{ padding: '16px', borderBottom: '1px solid rgba(255,255,255,0.1)', color: '#ffffff', fontSize: '14px', textTransform: 'uppercase' }}>Test Score</th>
                 <th style={{ padding: '16px', borderBottom: '1px solid rgba(255,255,255,0.1)', color: '#ffffff', fontSize: '14px', textTransform: 'uppercase' }}>Status</th>
                 <th style={{ padding: '16px', borderBottom: '1px solid rgba(255,255,255,0.1)', color: '#ffffff', fontSize: '14px', textTransform: 'uppercase' }}>Joined</th>
                 <th style={{ padding: '16px', borderBottom: '1px solid rgba(255,255,255,0.1)', color: '#ffffff', fontSize: '14px', textTransform: 'uppercase', textAlign: 'right' }}>Actions</th>
