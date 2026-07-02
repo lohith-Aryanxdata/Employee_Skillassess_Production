@@ -208,7 +208,7 @@ export default function EmployeeDashboard() {
                         className="w-full"
                     >
                         <div style={{ padding: "32px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", width: "100%", boxSizing: "border-box" }}>
-                            <ScoreRing value={d.actualScore ?? 0} label="Actual score" size={130} color="#10b981" />
+                            <ScoreRing value={d.actualScore ?? 0} label="MCQ Test Score" size={130} color="#10b981" />
                         </div>
                     </BorderGlow>
 
