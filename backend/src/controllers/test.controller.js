@@ -152,7 +152,17 @@ const getMyResults = async (req, res, next) => {
       include: {
         responses: {
           include: {
-            question: { select: { topic: true, questionText: true, correctAnswer: true } },
+            question: {
+              select: {
+                topic: true,
+                questionText: true,
+                correctAnswer: true,
+                optionA: true,
+                optionB: true,
+                optionC: true,
+                optionD: true,
+              },
+            },
           },
         },
       },
@@ -240,6 +250,7 @@ const getMyResults = async (req, res, next) => {
         timeTakenSeconds: attempt.timeTakenSeconds,
         submittedAt: attempt.submittedAt,
         status: attempt.status,
+        responses: attempt.responses,
       },
       selfAssessment: selfAssessment
         ? { overallPercentage: selfAssessment.overallPercentage }

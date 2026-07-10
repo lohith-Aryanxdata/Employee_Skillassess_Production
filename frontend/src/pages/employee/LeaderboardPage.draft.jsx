@@ -2,10 +2,10 @@ import React from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { useApi } from "@/hooks/useApi";
-import { leaderboardService } from "@/services";
+import { leaderboardService, testService } from "@/services";
 import { Spinner, Alert, Avatar } from "@/components/ui";
 import { formatPercent } from "@/utils/helpers";
-import { Crown } from "lucide-react";
+import { Crown, FileText } from "lucide-react";
 
 import Grainient from "@/component/Grainient/Grainient";
 
@@ -110,6 +110,257 @@ export default function LeaderboardPage() {
   const [speech, setSpeech] = React.useState("");
   const [showSpeech, setShowSpeech] = React.useState(false);
   const [isAccessing, setIsAccessing] = React.useState(false);
+  const [downloading, setDownloading] = React.useState(false);
+
+  const handleDownloadPDF = async () => {
+    try {
+      setDownloading(true);
+      const res = await testService.getResults();
+      const results = res.data?.data ?? res.data;
+      if (!results || !results.attempt) {
+        alert("No completed test results found.");
+        return;
+      }
+      
+      const { attempt } = results;
+      const responses = attempt.responses || [];
+      
+      const printWindow = window.open("", "_blank");
+      if (!printWindow) {
+        alert("Please allow popups to download your report.");
+        return;
+      }
+      
+      printWindow.document.write(`
+        <html>
+          <head>
+            <title>Test Report - ${user.name}</title>
+            <style>
+              body {
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                color: #1e293b;
+                margin: 0;
+                padding: 40px;
+                background-color: #ffffff;
+                line-height: 1.5;
+              }
+              header {
+                border-bottom: 2px solid #e2e8f0;
+                padding-bottom: 20px;
+                margin-bottom: 30px;
+              }
+              .title-row {
+                display: flex;
+                justify-content: space-between;
+                align-items: flex-start;
+              }
+              .title {
+                font-size: 26px;
+                font-weight: bold;
+                color: #0f172a;
+                margin: 0;
+              }
+              .meta-grid {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 12px;
+                margin-top: 15px;
+                font-size: 14px;
+                color: #475569;
+              }
+              .score-badge {
+                background-color: #f0fdf4;
+                border: 1px solid #bbf7d0;
+                color: #15803d;
+                padding: 8px 16px;
+                border-radius: 8px;
+                font-size: 16px;
+                font-weight: bold;
+                display: inline-block;
+              }
+              .question-card {
+                border: 1px solid #e2e8f0;
+                border-radius: 8px;
+                padding: 20px;
+                margin-bottom: 24px;
+                page-break-inside: avoid;
+              }
+              .question-num {
+                font-size: 12px;
+                text-transform: uppercase;
+                letter-spacing: 0.05em;
+                color: #64748b;
+                font-weight: 600;
+                margin-bottom: 4px;
+              }
+              .question-text {
+                font-size: 16px;
+                font-weight: 600;
+                color: #0f172a;
+                margin: 0 0 16px 0;
+              }
+              .options-grid {
+                display: grid;
+                grid-template-columns: 1fr;
+                gap: 8px;
+                margin-bottom: 16px;
+              }
+              .option {
+                padding: 10px 14px;
+                border-radius: 6px;
+                border: 1px solid #e2e8f0;
+                font-size: 14px;
+                color: #334155;
+                display: flex;
+                align-items: center;
+                gap: 10px;
+              }
+              .option.correct {
+                border-color: #10b981;
+                background-color: #ecfdf5;
+                color: #065f46;
+                font-weight: 500;
+              }
+              .option.incorrect {
+                border-color: #ef4444;
+                background-color: #fef2f2;
+                color: #991b1b;
+              }
+              .option-indicator {
+                width: 20px;
+                height: 20px;
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 11px;
+                font-weight: bold;
+                flex-shrink: 0;
+              }
+              .option.correct .option-indicator {
+                background-color: #10b981;
+                color: white;
+              }
+              .option.incorrect .option-indicator {
+                background-color: #ef4444;
+                color: white;
+              }
+              .answer-summary {
+                margin-top: 12px;
+                padding-top: 12px;
+                border-top: 1px solid #f1f5f9;
+                font-size: 13px;
+                display: flex;
+                gap: 20px;
+              }
+              .summary-item {
+                font-weight: 500;
+              }
+              .summary-item span {
+                font-weight: bold;
+              }
+              .text-correct {
+                color: #15803d;
+              }
+              .text-incorrect {
+                color: #b91c1c;
+              }
+              @media print {
+                body {
+                  padding: 20px;
+                }
+                .no-print {
+                  display: none;
+                }
+              }
+            </style>
+          </head>
+          <body>
+            <header>
+              <div class="title-row">
+                <div>
+                  <h1 class="title">MCQ Test Assessment Report</h1>
+                  <div class="meta-grid">
+                    <div><strong>Candidate Name:</strong> ${user?.name || 'N/A'}</div>
+                    <div><strong>Email:</strong> ${user?.email || 'N/A'}</div>
+                    <div><strong>Department:</strong> ${user?.department || 'N/A'}</div>
+                    <div><strong>Submission Date:</strong> ${attempt.submittedAt ? new Date(attempt.submittedAt).toLocaleString() : 'N/A'}</div>
+                    <div><strong>Time Taken:</strong> ${Math.floor(attempt.timeTakenSeconds / 60)}m ${attempt.timeTakenSeconds % 60}s</div>
+                    <div><strong>Total Questions:</strong> ${attempt.totalQuestions}</div>
+                  </div>
+                </div>
+                <div>
+                  <div class="score-badge">
+                    Score: ${attempt.scorePercentage}% (${attempt.correctAnswers}/${attempt.totalQuestions})
+                  </div>
+                </div>
+              </div>
+            </header>
+            <main>
+              ${responses.map((res, index) => {
+                const q = res.question;
+                const isCorrect = res.isCorrect;
+                
+                const options = [
+                  { key: 'A', text: q.optionA },
+                  { key: 'B', text: q.optionB },
+                  { key: 'C', text: q.optionC },
+                  { key: 'D', text: q.optionD },
+                ];
+                
+                return `
+                  <div class="question-card">
+                    <div class="question-num">Question ${index + 1} (${q.topic})</div>
+                    <div class="question-text">${q.questionText}</div>
+                    <div class="options-grid">
+                      ${options.map(opt => {
+                        let optClass = 'option';
+                        let indicator = opt.key;
+                        
+                        if (opt.key === q.correctAnswer) {
+                          optClass += ' correct';
+                          indicator = '✓';
+                        } else if (opt.key === res.selectedAnswer && !isCorrect) {
+                          optClass += ' incorrect';
+                          indicator = '✗';
+                        }
+                        
+                        return `
+                          <div class="${optClass}">
+                            <div class="option-indicator">${indicator}</div>
+                            <span>${opt.text}</span>
+                          </div>
+                        `;
+                      }).join('')}
+                    </div>
+                    <div class="answer-summary">
+                      <div class="summary-item">
+                        Your Answer: <span class="${isCorrect ? 'text-correct' : 'text-incorrect'}">${res.selectedAnswer || 'None'}</span>
+                      </div>
+                      <div class="summary-item">
+                        Correct Answer: <span class="text-correct">${q.correctAnswer}</span>
+                      </div>
+                    </div>
+                  </div>
+                `;
+              }).join('')}
+            </main>
+            <script>
+              window.onload = function() {
+                window.print();
+              };
+            </script>
+          </body>
+        </html>
+      `);
+      printWindow.document.close();
+    } catch (err) {
+      console.error(err);
+      alert("Failed to download PDF report. Make sure you completed the test.");
+    } finally {
+      setDownloading(false);
+    }
+  };
 
   const dialogs = [
     "Meow.",
@@ -202,7 +453,7 @@ export default function LeaderboardPage() {
           <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', tableLayout: 'fixed' }}>
             <thead>
               <tr style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-                {[["Rank", "60px"], ["Employee", null], ["Department", null], ["Score", "100px"], ["Accuracy", "100px"]].map(([h, w]) => (
+                {[["Rank", "60px"], ["Employee", null], ["Department", null], ["Score", "100px"], ["Accuracy", "100px"], ["Actions", "140px"]].map(([h, w]) => (
                   <th key={h} style={{
                     width: w ?? undefined,
                     padding: '14px 20px',
@@ -270,6 +521,28 @@ export default function LeaderboardPage() {
                     </td>
                     <td style={{ padding: '14px 20px 14px 16px', fontSize: '13px', color: 'rgba(203,213,225,0.75)', fontFamily: 'monospace', textAlign: 'right' }}>
                       {formatPercent(entry.cai, 0)}
+                    </td>
+                    <td style={{ padding: '14px 16px', textAlign: 'center' }}>
+                      {isMe ? (
+                        <button
+                          onClick={handleDownloadPDF}
+                          disabled={downloading}
+                          style={{
+                            display: 'inline-flex', alignItems: 'center', gap: '6px',
+                            padding: '6px 12px', borderRadius: '8px',
+                            backgroundColor: '#2563eb', color: '#ffffff',
+                            border: 'none', cursor: 'pointer', fontSize: '11px',
+                            transition: 'background 0.2s', opacity: downloading ? 0.7 : 1
+                          }}
+                          onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#1d4ed8'}
+                          onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#2563eb'}
+                        >
+                          <FileText size={12} />
+                          {downloading ? "Loading..." : "Download Report"}
+                        </button>
+                      ) : (
+                        <span style={{ color: 'rgba(148,163,184,0.3)', fontSize: '11px' }}>—</span>
+                      )}
                     </td>
                   </tr>
                 );

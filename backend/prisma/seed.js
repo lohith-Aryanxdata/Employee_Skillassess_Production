@@ -62,7 +62,6 @@ async function main() {
     console.log("   Super Admin → superadmin@sceniuz.com  /  SuperAdmin@123!");
     console.log("   Admin       → admin@sceniuz.com        /  Admin@123!");
     console.log("   Employee    → employee@sceniuz.com     /  Employee@123!  (team: Test Admin)");
-
   } catch (error) {
     console.error("❌ Error during seed:", error);
     throw error;
